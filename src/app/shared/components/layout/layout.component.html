@@ -1,0 +1,31 @@
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+  <div class="flex">
+    <!-- Sidebar -->
+    <app-sidebar
+      [brandName]="'Hawkeye'"
+      [logo]="'assets/logo.png'"
+      [navigationItems]="sidebarItems"
+      [user]="user"
+      [showToggle]="true"
+      [isOpen]="sidebarOpen"
+    ></app-sidebar>
+
+    <!-- Main content area -->
+    <div class="flex-1 flex flex-col">
+      <!-- Navbar -->
+      <app-navbar
+        [navigationItems]="navbarItems"
+        [user]="user"
+        [showNotifications]="true"
+        (sidebarToggle)="toggleSidebar()"
+      ></app-navbar>
+
+      <!-- Main content -->
+      <div class="flex-1 bg-gray-50 dark:bg-gray-900">
+        <div class="p-8">
+          <ng-content></ng-content>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

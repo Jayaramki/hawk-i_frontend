@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@import "./styles/_theme.scss";
+
+// Azure DevOps style typography base styles
+body {
+  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Helvetica, Ubuntu, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-size: 0.9375rem; // 15px base size
+  line-height: 1.5;
+  letter-spacing: 0.025em;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Override bold fonts to match Azure DevOps style
+.font-bold {
+  font-weight: 600 !important; // Use semibold instead of bold
+}
+
+.font-semibold {
+  font-weight: 500 !important; // Use medium instead of semibold
+}
+
+.font-medium {
+  font-weight: 400 !important; // Use normal instead of medium
+}
+
+// Azure DevOps specific typography classes
+.text-heading {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.025em;
+}
+
+.text-subheading {
+  font-size: 1.125rem;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: 0.025em;
+}
+
+.text-body {
+  font-size: 0.9375rem;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0.025em;
+}
+
+.text-caption {
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.25;
+  letter-spacing: 0.025em;
+}
+
+.text-small {
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.025em;
+}
+
+// Additional global styles can be added here
