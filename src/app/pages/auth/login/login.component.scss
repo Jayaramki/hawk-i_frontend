@@ -1,0 +1,14 @@
+// Additional custom styles for login component if needed
+.login-container {
+  min-height: 100vh;
+}
+
+// Custom focus styles for better accessibility
+input:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+// Smooth transitions
+* {
+  transition: all 0.2s ease-in-out;
+}

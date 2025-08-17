@@ -5,11 +5,14 @@ export const routes: Routes = [
     path: '',
     loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent)
   },
-  // Auth routes can be added later
-  // {
-  //   path: 'auth',
-  //   loadChildren: () => import('./pages/auth/auth.routes').then(m => m.AUTH_ROUTES)
-  // },
+  {
+    path: 'login',
+    loadComponent: () => import('./pages/auth/login/login.component').then(m => m.LoginComponent)
+  },
+  {
+    path: 'auth/logout',
+    loadComponent: () => import('./pages/auth/signout/signout.component').then(m => m.SignoutComponent)
+  },
   {
     path: '**',
     redirectTo: ''
