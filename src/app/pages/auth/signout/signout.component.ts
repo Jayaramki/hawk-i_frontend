@@ -10,7 +10,7 @@ import { Router } from '@angular/router';
     <div class="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
       <div class="max-w-md w-full space-y-8">
         <div class="text-center">
-          <img src="assets/logo.png" alt="INA-HawkEye Logo" class="w-42 h-32 mx-auto mb-8">
+          <img src="assets/logo.png" alt="Hawk-i Logo" class="w-42 h-32 mx-auto mb-8">
           <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Signing Out</h2>
           <p class="text-gray-600 dark:text-gray-400">Please wait while we sign you out...</p>
         </div>

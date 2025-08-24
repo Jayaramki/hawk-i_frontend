@@ -16,7 +16,7 @@ import { ThemeService } from './shared/services/theme.service';
   styles: []
 })
 export class AppComponent implements OnInit {
-  title = 'hawkeye-frontend';
+  title = 'Hawk-i';
 
   constructor(private themeService: ThemeService) {}
 
