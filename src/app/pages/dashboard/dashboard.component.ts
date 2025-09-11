@@ -12,15 +12,11 @@ import { LayoutComponent } from '../../shared/components/layout/layout.component
     LayoutComponent
   ],
   template: `
-    <app-layout
-      [user]="user"
-      [navbarItems]="navbarItems"
-      [sidebarItems]="sidebarItems"
-    >
+    <app-layout>
       <!-- Page header -->
       <div class="mb-8">
         <h1 class="text-heading text-gray-900 dark:text-white mb-2">Dashboard</h1>
-        <p class="text-body text-gray-600 dark:text-gray-300">Welcome to your Hawkeye project management dashboard</p>
+        <p class="text-body text-gray-600 dark:text-gray-300">Welcome to your Hawk-i project management dashboard</p>
       </div>
 
             <!-- Top metric cards -->
@@ -269,60 +265,4 @@ import { LayoutComponent } from '../../shared/components/layout/layout.component
   styles: []
 })
 export class DashboardComponent {
-  user = {
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    avatar: ''
-  };
-
-
-
-  navbarItems = [
-    { label: 'Dashboard', route: '/' },
-    { label: 'Users', route: '/users' },
-    { label: 'Reports', route: '/reports' },
-    { label: 'Settings', route: '/settings' }
-  ];
-
-  sidebarItems = [
-    {
-      label: 'Dashboard',
-      route: '/',
-      icon: 'fas fa-tachometer-alt'
-    },
-    {
-      label: 'User Management',
-      icon: 'fas fa-users',
-      children: [
-        { label: 'All Users', route: '/users', badge: '2.8k' },
-        { label: 'Add User', route: '/users/add' },
-        { label: 'User Groups', route: '/users/groups' }
-      ]
-    },
-    {
-      label: 'Analytics',
-      icon: 'fas fa-chart-bar',
-      children: [
-        { label: 'Overview', route: '/analytics' },
-        { label: 'Reports', route: '/analytics/reports' },
-        { label: 'Export', route: '/analytics/export' }
-      ]
-    },
-    {
-      label: 'Settings',
-      icon: 'fas fa-cog',
-      children: [
-        { label: 'General', route: '/settings' },
-        { label: 'Security', route: '/settings/security' },
-        { label: 'Notifications', route: '/settings/notifications' }
-      ]
-    },
-    {
-      label: 'Support',
-      route: '/support',
-      icon: 'fas fa-life-ring',
-      badge: 'New',
-             badgeColor: 'success' as const
-    }
-  ];
 }

@@ -136,7 +136,7 @@ interface SidebarItem {
   styles: []
 })
 export class SidebarComponent {
-  @Input() brandName = 'Hawkeye';
+  @Input() brandName = 'Hawk-i';
   @Input() logo?: string;
   @Input() navigationItems: SidebarItem[] = [];
   @Input() user?: {name: string, email: string, avatar?: string};

@@ -1,4 +1,4 @@
-# Hawkeye Frontend - Notus Angular Theme Recreation
+# Hawk-i Frontend - Notus Angular Theme Recreation
 
 A modern Angular dashboard application built with Tailwind CSS v4, featuring a comprehensive UI component library inspired by the Notus Angular design system.
 
@@ -39,7 +39,7 @@ A modern Angular dashboard application built with Tailwind CSS v4, featuring a c
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd hawkeye-frontend
+   cd hawk-i_frontend
    ```
 
 2. **Install dependencies**
@@ -135,7 +135,7 @@ src/
 #### Navbar Component
 ```typescript
 <app-navbar
-  [brandName]="'Hawkeye'"
+  [brandName]="'Hawk-i'"
   [navigationItems]="navItems"
   [user]="currentUser"
   [showNotifications]="true"
@@ -145,7 +145,7 @@ src/
 #### Sidebar Component
 ```typescript
 <app-sidebar
-  [brandName]="'Hawkeye'"
+  [brandName]="'Hawk-i'"
   [navigationItems]="sidebarItems"
   [user]="currentUser"
   [showToggle]="true"

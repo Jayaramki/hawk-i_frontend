@@ -155,7 +155,7 @@ import { ThemeService, Theme } from '../../services/theme.service';
   styles: []
 })
 export class NavbarComponent implements OnInit {
-  @Input() brandName = 'Hawkeye';
+  @Input() brandName = 'Hawk-i';
   @Input() logo?: string;
   @Input() navigationItems: Array<{label: string, route: string}> = [];
   @Input() user?: {name: string, email: string, avatar?: string};

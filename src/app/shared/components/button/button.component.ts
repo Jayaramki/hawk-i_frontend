@@ -11,11 +11,12 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
   template: `
     <button
       [class]="buttonClasses"
-      [disabled]="disabled"
+      [disabled]="disabled || loading"
       [type]="type"
       (click)="onClick.emit($event)"
       class="inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
     >
+      <i *ngIf="loading" class="fas fa-spinner fa-spin mr-2"></i>
       <ng-content></ng-content>
     </button>
   `,
@@ -25,6 +26,7 @@ export class ButtonComponent {
   @Input() variant: ButtonVariant = 'primary';
   @Input() size: ButtonSize = 'md';
   @Input() disabled = false;
+  @Input() loading = false;
   @Input() type: 'button' | 'submit' | 'reset' = 'button';
   @Input() fullWidth = false;
   @Input() rounded = false;

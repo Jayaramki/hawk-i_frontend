@@ -1,7 +1,8 @@
+@use "./styles/_theme.scss";
+/* postcss-import */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import "./styles/_theme.scss";
 
 // Azure DevOps style typography base styles
 body {
