@@ -7,11 +7,12 @@ import { CardComponent } from '../../shared/components/card/card.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { InputComponent } from '../../shared/components/input/input.component';
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
+import { ClientGridComponent, GridColumn, GridAction } from '../../shared/components/client-grid/client-grid.component';
 
 @Component({
   selector: 'app-employees',
   standalone: true,
-  imports: [CommonModule, FormsModule, CardComponent, ButtonComponent, InputComponent, LayoutComponent],
+  imports: [CommonModule, FormsModule, CardComponent, ButtonComponent, InputComponent, LayoutComponent, ClientGridComponent],
   template: `
     <app-layout>
       <div class="p-6">
@@ -69,131 +70,19 @@ import { LayoutComponent } from '../../shared/components/layout/layout.component
 
       <!-- Employee List -->
       <app-card>
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead class="bg-gray-50 dark:bg-gray-800">
-              <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Employee
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Department
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Job Title
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Status
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-              <tr *ngIf="loading" class="animate-pulse">
-                <td colspan="5" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                  <i class="fas fa-spinner fa-spin mr-2"></i>
-                  Loading employees...
-                </td>
-              </tr>
-              <tr *ngIf="!loading && paginatedEmployees.length === 0">
-                <td colspan="5" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                  <i class="fas fa-users mr-2"></i>
-                  No employees found
-                </td>
-              </tr>
-              <tr *ngFor="let employee of paginatedEmployees" class="hover:bg-gray-50 dark:hover:bg-gray-800">
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="flex items-center">
-                    <div class="flex-shrink-0 h-10 w-10">
-                      <div class="h-10 w-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
-                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          {{ getInitials(employee.first_name, employee.last_name) }}
-                        </span>
-                      </div>
-                    </div>
-                    <div class="ml-4">
-                      <div class="text-sm font-medium text-gray-900 dark:text-white">
-                        {{ employee.first_name }} {{ employee.last_name }}
-                      </div>
-                      <div class="text-sm text-gray-500 dark:text-gray-400">
-                        {{ employee.work_email || 'No email' }}
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="text-sm text-gray-900 dark:text-white">
-                    {{ employee.department?.name || employee.department || 'N/A' }}
-                  </div>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="text-sm text-gray-900 dark:text-white">
-                    {{ employee.job_title || 'N/A' }}
-                  </div>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
-                        [class]="getStatusClass(employee.status)">
-                    {{ employee.status || 'Unknown' }}
-                  </span>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button
-                    (click)="viewEmployee(employee)"
-                    class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3">
-                    <i class="fas fa-eye"></i>
-                  </button>
-                  <button
-                    (click)="editEmployee(employee)"
-                    class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
-                    <i class="fas fa-edit"></i>
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Pagination -->
-        <div *ngIf="totalPages > 1" class="px-6 py-3 border-t border-gray-200 dark:border-gray-700">
-          <div class="flex items-center justify-between">
-            <div class="text-sm text-gray-700 dark:text-gray-300">
-              Showing {{ (currentPage - 1) * itemsPerPage + 1 }} to {{ Math.min(currentPage * itemsPerPage, filteredEmployees.length) }} of {{ filteredEmployees.length }} results
-            </div>
-            <div class="flex items-center space-x-2">
-              <app-button
-                *ngIf="currentPage > 1"
-                (click)="goToPage(currentPage - 1)"
-                variant="secondary"
-                size="sm">
-                Previous
-              </app-button>
-              
-              <!-- Page numbers -->
-              <div class="flex space-x-1">
-                <button
-                  *ngFor="let page of getPageNumbers()"
-                  (click)="goToPage(page)"
-                  class="px-3 py-1 text-sm rounded"
-                  [class]="page === currentPage 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'">
-                  {{ page }}
-                </button>
-              </div>
-              
-              <app-button
-                *ngIf="currentPage < totalPages"
-                (click)="goToPage(currentPage + 1)"
-                variant="secondary"
-                size="sm">
-                Next
-              </app-button>
-            </div>
-          </div>
-        </div>
+        <app-client-grid
+          [data]="allEmployees"
+          [columns]="gridColumns"
+          [actions]="gridActions"
+          [loading]="loading"
+          [searchTerm]="searchTerm"
+          [searchFields]="['first_name', 'last_name', 'work_email', 'job_title', 'department.name', 'department']"
+          [itemsPerPage]="20"
+          loadingMessage="Loading employees..."
+          emptyMessage="No employees found"
+          (pageChange)="onPageChange($event)"
+          (sortChange)="onSortChange($event)">
+        </app-client-grid>
       </app-card>
       </div>
     </app-layout>
@@ -206,25 +95,54 @@ import { LayoutComponent } from '../../shared/components/layout/layout.component
 })
 export class EmployeesComponent implements OnInit, OnDestroy {
   allEmployees: Employee[] = [];
-  filteredEmployees: Employee[] = [];
-  paginatedEmployees: Employee[] = [];
   departments: string[] = [];
   searchTerm: string = '';
   loading: boolean = false;
   totalEmployees: number = 0;
   activeEmployees: number = 0;
   
-  // Client-side pagination
-  currentPage: number = 1;
-  itemsPerPage: number = 20;
-  totalPages: number = 0;
+  // Grid configuration
+  gridColumns: GridColumn[] = [
+    {
+      key: 'displayName',
+      title: 'Employee',
+      width: '300px'
+    },
+    {
+      key: 'departmentDisplay',
+      title: 'Department',
+      sortable: true
+    },
+    {
+      key: 'job_title',
+      title: 'Job Title',
+      sortable: true
+    },
+    {
+      key: 'statusDisplay',
+      title: 'Status',
+      sortable: true
+    }
+  ];
+
+  gridActions: GridAction[] = [
+    {
+      label: 'View',
+      icon: 'fas fa-eye',
+      class: 'text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3',
+      action: (employee: Employee) => this.viewEmployee(employee)
+    },
+    {
+      label: 'Edit',
+      icon: 'fas fa-edit',
+      class: 'text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300',
+      action: (employee: Employee) => this.editEmployee(employee)
+    }
+  ];
   
   // Debounced search
   private readonly searchSubject = new Subject<string>();
   private readonly destroy$ = new Subject<void>();
-  
-  // Expose Math to template
-  Math = Math;
 
   constructor(private readonly bambooHRService: BambooHRService) {}
 
@@ -247,7 +165,7 @@ export class EmployeesComponent implements OnInit, OnDestroy {
       )
       .subscribe(searchTerm => {
         this.searchTerm = searchTerm;
-        this.filterEmployees();
+        // The grid component will handle filtering automatically
       });
   }
 
@@ -263,9 +181,15 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     this.bambooHRService.getEmployees(params).subscribe({
       next: (response) => {
         if (response.success) {
-          this.allEmployees = response.data.data || [];
+          this.allEmployees = (response.data.data || []).map((employee: Employee) => ({
+            ...employee,
+            displayName: `${employee.first_name} ${employee.last_name}`,
+            departmentDisplay: typeof employee.department === 'string' 
+              ? employee.department 
+              : employee.department?.name || 'N/A',
+            statusDisplay: employee.status || 'Unknown'
+          }));
           this.totalEmployees = this.allEmployees.length;
-          this.filterEmployees();
           this.updateStats();
         }
         this.loading = false;
@@ -277,33 +201,15 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     });
   }
 
-  private filterEmployees(): void {
-    if (!this.searchTerm.trim()) {
-      this.filteredEmployees = [...this.allEmployees];
-    } else {
-      const searchLower = this.searchTerm.toLowerCase();
-      this.filteredEmployees = this.allEmployees.filter(employee => {
-        const departmentName = typeof employee.department === 'string' 
-          ? employee.department 
-          : employee.department?.name || '';
-        
-        return employee.first_name?.toLowerCase().includes(searchLower) ||
-               employee.last_name?.toLowerCase().includes(searchLower) ||
-               employee.work_email?.toLowerCase().includes(searchLower) ||
-               employee.job_title?.toLowerCase().includes(searchLower) ||
-               departmentName.toLowerCase().includes(searchLower);
-      });
-    }
-    
-    this.currentPage = 1; // Reset to first page when filtering
-    this.updatePagination();
+  // Grid event handlers
+  onPageChange(page: number): void {
+    // Client-side pagination is handled by the grid component
+    console.log('Page changed to:', page);
   }
 
-  private updatePagination(): void {
-    this.totalPages = Math.ceil(this.filteredEmployees.length / this.itemsPerPage);
-    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-    const endIndex = startIndex + this.itemsPerPage;
-    this.paginatedEmployees = this.filteredEmployees.slice(startIndex, endIndex);
+  onSortChange(sortInfo: {column: string, direction: 'asc' | 'desc'}): void {
+    // Client-side sorting is handled by the grid component
+    console.log('Sort changed:', sortInfo);
   }
 
   onSearchChange(): void {
@@ -359,32 +265,4 @@ export class EmployeesComponent implements OnInit, OnDestroy {
     console.log('Edit employee:', employee);
   }
 
-  goToPage(page: number): void {
-    if (page >= 1 && page <= this.totalPages) {
-      this.currentPage = page;
-      this.updatePagination();
-    }
-  }
-
-  getPageNumbers(): number[] {
-    const pages: number[] = [];
-    const maxVisiblePages = 5;
-    
-    if (this.totalPages <= maxVisiblePages) {
-      // Show all pages if total is small
-      for (let i = 1; i <= this.totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      // Show pages around current page
-      const start = Math.max(1, this.currentPage - 2);
-      const end = Math.min(this.totalPages, start + maxVisiblePages - 1);
-      
-      for (let i = start; i <= end; i++) {
-        pages.push(i);
-      }
-    }
-    
-    return pages;
-  }
 }
