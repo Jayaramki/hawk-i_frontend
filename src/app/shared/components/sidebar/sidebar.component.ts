@@ -1,15 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, RouterLink, RouterLinkActive } from '@angular/router';
-
-interface SidebarItem {
-  label: string;
-  route?: string;
-  icon?: string;
-  children?: SidebarItem[];
-  badge?: string;
-  badgeColor?: 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'info';
-}
+import { RouterModule } from '@angular/router';
+import { SidebarItem } from '../../services/layout.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -182,16 +174,14 @@ export class SidebarComponent {
       : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700';
   }
 
-  getBadgeClasses(color: string = 'danger'): string {
+  getBadgeClasses(color: 'success' | 'warning' | 'danger' | 'info' | undefined = 'danger'): string {
     const colorClasses = {
-      primary: 'bg-primary-100 text-primary-900',
-      secondary: 'bg-secondary-100 text-secondary-900',
-      success: 'bg-success-100 text-success-900',
-      danger: 'bg-danger-100 text-danger-900',
-      warning: 'bg-warning-100 text-warning-900',
-      info: 'bg-info-100 text-info-900'
+      success: 'bg-green-100 text-green-900',
+      danger: 'bg-red-100 text-red-900',
+      warning: 'bg-yellow-100 text-yellow-900',
+      info: 'bg-blue-100 text-blue-900'
     };
     
-    return colorClasses[color as keyof typeof colorClasses] || colorClasses.danger;
+    return colorClasses[color || 'danger'];
   }
 }

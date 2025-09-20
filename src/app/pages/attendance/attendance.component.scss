@@ -1,0 +1,138 @@
+// Custom styles for attendance component
+.status-complete {
+  @apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200;
+}
+
+.status-checked-in {
+  @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200;
+}
+
+.status-incomplete {
+  @apply bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200;
+}
+
+// Import modal styles
+.import-content {
+  .upload-area {
+    @apply transition-colors duration-200;
+    
+    &:hover {
+      @apply border-blue-400 bg-blue-50;
+    }
+  }
+
+  .selected-file {
+    @apply transition-all duration-200;
+  }
+
+  .result-card {
+    @apply transition-all duration-200;
+  }
+  
+  .error-details {
+    .error-item {
+      @apply transition-all duration-200 hover:bg-red-100;
+    }
+    
+    .error-scroll {
+      scrollbar-width: thin;
+      scrollbar-color: #fca5a5 #fef2f2;
+      
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+      
+      &::-webkit-scrollbar-track {
+        @apply bg-red-100 rounded;
+      }
+      
+      &::-webkit-scrollbar-thumb {
+        @apply bg-red-400 rounded;
+      }
+    }
+  }
+}
+
+// Modal styles
+.fixed.inset-0 {
+  z-index: 9999 !important;
+}
+
+// Ensure modal content is above everything
+.import-modal {
+  z-index: 10000 !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+}
+
+// Modal overlay
+.modal-overlay {
+  z-index: 9998 !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+}
+
+// Modal panel positioning
+.modal-panel {
+  z-index: 10001 !important;
+  position: relative !important;
+}
+
+// Ensure modal is above all other content
+.import-modal {
+  .modal-panel {
+    z-index: 10001 !important;
+  }
+}
+
+// Global modal fixes
+:host ::ng-deep {
+  // Ensure no other elements interfere
+  * {
+    &.import-modal,
+    &.modal-overlay,
+    &.modal-panel {
+      z-index: inherit !important;
+    }
+  }
+  
+  // Override any conflicting z-index values
+  .import-modal {
+    z-index: 10000 !important;
+  }
+  
+  .modal-overlay {
+    z-index: 9998 !important;
+  }
+  
+  .modal-panel {
+    z-index: 10001 !important;
+  }
+}
+
+// Custom grid styles for better appearance
+:host ::ng-deep {
+  .p-datatable {
+    .p-datatable-header {
+      @apply bg-gray-50 dark:bg-gray-800;
+    }
+    
+    .p-datatable-thead > tr > th {
+      @apply bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold;
+    }
+    
+    .p-datatable-tbody > tr {
+      @apply hover:bg-gray-50 dark:hover:bg-gray-800;
+    }
+    
+    .p-datatable-tbody > tr > td {
+      @apply text-gray-900 dark:text-white;
+    }
+  }
+}

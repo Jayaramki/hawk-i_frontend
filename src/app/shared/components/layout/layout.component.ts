@@ -24,13 +24,13 @@ export class LayoutComponent implements OnInit {
   ngOnInit() {
     // Use service data as fallback if inputs are not provided
     if (!this.user) {
-      this.user = this.layoutService.user;
+      this.user = this.layoutService.user();
     }
     if (!this.navbarItems.length) {
-      this.navbarItems = this.layoutService.navbarItems;
+      this.navbarItems = this.layoutService.navbarItems();
     }
     if (!this.sidebarItems.length) {
-      this.sidebarItems = this.layoutService.sidebarItems;
+      this.sidebarItems = this.layoutService.sidebarItems();
     }
   }
 

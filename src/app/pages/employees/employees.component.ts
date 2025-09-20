@@ -1,8 +1,9 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import { BambooHRService, Employee } from '../../shared/services/bamboohr.service';
+import { LayoutService } from '../../shared/services/layout.service';
 import { CardComponent } from '../../shared/components/card/card.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { InputComponent } from '../../shared/components/input/input.component';
@@ -26,17 +27,17 @@ import { ClientGridComponent, GridColumn, GridAction } from '../../shared/compon
         <app-card>
           <div class="flex flex-col md:flex-row gap-4">
             <div class="flex-1">
-              <app-input
-                [(ngModel)]="searchTerm"
-                placeholder="Search employees..."
-                (ngModelChange)="onSearchChange()"
-                class="w-full">
-              </app-input>
+        <app-input
+          [ngModel]="searchTerm()"
+          (ngModelChange)="searchTerm.set($event)"
+          placeholder="Search employees..."
+          class="w-full">
+        </app-input>
             </div>
             <div class="flex gap-2">
               <app-button
                 (click)="loadAllEmployees()"
-                [loading]="loading"
+                [loading]="loading()"
                 variant="primary">
                 <i class="fas fa-sync-alt mr-2"></i>
                 Refresh
@@ -50,19 +51,19 @@ import { ClientGridComponent, GridColumn, GridAction } from '../../shared/compon
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <app-card>
           <div class="text-center">
-            <div class="text-3xl font-bold text-blue-600 dark:text-blue-400">{{ totalEmployees }}</div>
+            <div class="text-3xl font-bold text-blue-600 dark:text-blue-400">{{ totalEmployees() }}</div>
             <div class="text-sm text-gray-600 dark:text-gray-400">Total Employees</div>
           </div>
         </app-card>
         <app-card>
           <div class="text-center">
-            <div class="text-3xl font-bold text-green-600 dark:text-green-400">{{ activeEmployees }}</div>
+            <div class="text-3xl font-bold text-green-600 dark:text-green-400">{{ activeEmployeesCount() }}</div>
             <div class="text-sm text-gray-600 dark:text-gray-400">Active Employees</div>
           </div>
         </app-card>
         <app-card>
           <div class="text-center">
-            <div class="text-3xl font-bold text-purple-600 dark:text-purple-400">{{ departments.length }}</div>
+            <div class="text-3xl font-bold text-purple-600 dark:text-purple-400">{{ departments().length }}</div>
             <div class="text-sm text-gray-600 dark:text-gray-400">Departments</div>
           </div>
         </app-card>
@@ -71,11 +72,11 @@ import { ClientGridComponent, GridColumn, GridAction } from '../../shared/compon
       <!-- Employee List -->
       <app-card>
         <app-client-grid
-          [data]="allEmployees"
+          [data]="filteredEmployees()"
           [columns]="gridColumns"
           [actions]="gridActions"
-          [loading]="loading"
-          [searchTerm]="searchTerm"
+          [loading]="loading()"
+          [searchTerm]="searchTerm()"
           [searchFields]="['first_name', 'last_name', 'work_email', 'job_title', 'department.name', 'department']"
           [itemsPerPage]="20"
           loadingMessage="Loading employees..."
@@ -94,12 +95,44 @@ import { ClientGridComponent, GridColumn, GridAction } from '../../shared/compon
   `]
 })
 export class EmployeesComponent implements OnInit, OnDestroy {
-  allEmployees: Employee[] = [];
-  departments: string[] = [];
-  searchTerm: string = '';
-  loading: boolean = false;
-  totalEmployees: number = 0;
-  activeEmployees: number = 0;
+  // Signals for reactive state management
+  allEmployees = signal<Employee[]>([]);
+  departments = signal<string[]>([]);
+  searchTerm = signal<string>('');
+  loading = signal<boolean>(false);
+  totalEmployees = signal<number>(0);
+  activeEmployees = signal<number>(0);
+
+  // Computed signals for derived state
+  filteredEmployees = computed(() => {
+    const employees = this.allEmployees();
+    const search = this.searchTerm().toLowerCase();
+    
+    if (!search) return employees;
+    
+    return employees.filter(employee => {
+      const firstName = employee.first_name?.toLowerCase() || '';
+      const lastName = employee.last_name?.toLowerCase() || '';
+      const workEmail = employee.work_email?.toLowerCase() || '';
+      const jobTitle = employee.job_title?.toLowerCase() || '';
+      
+      let departmentName = '';
+      if (employee.department && typeof employee.department === 'object' && employee.department.name) {
+        departmentName = employee.department.name.toLowerCase();
+      }
+      
+      return firstName.includes(search) ||
+             lastName.includes(search) ||
+             workEmail.includes(search) ||
+             jobTitle.includes(search) ||
+             departmentName.includes(search);
+    });
+  });
+
+  // Computed signal for active employees count
+  activeEmployeesCount = computed(() => {
+    return this.allEmployees().filter(emp => emp.status === 'Active').length;
+  });
   
   // Grid configuration
   gridColumns: GridColumn[] = [
@@ -144,7 +177,10 @@ export class EmployeesComponent implements OnInit, OnDestroy {
   private readonly searchSubject = new Subject<string>();
   private readonly destroy$ = new Subject<void>();
 
-  constructor(private readonly bambooHRService: BambooHRService) {}
+  constructor(
+    private readonly bambooHRService: BambooHRService,
+    private readonly layoutService: LayoutService
+  ) {}
 
   ngOnInit(): void {
     this.setupSearchDebouncing();
@@ -164,24 +200,24 @@ export class EmployeesComponent implements OnInit, OnDestroy {
         takeUntil(this.destroy$)
       )
       .subscribe(searchTerm => {
-        this.searchTerm = searchTerm;
+        this.searchTerm.set(searchTerm);
         // The grid component will handle filtering automatically
       });
   }
 
   loadAllEmployees(): void {
-    this.loading = true;
+    this.loading.set(true);
     
     // Load all employees at once for client-side pagination
     const params = {
-      // No page parameter - load all employees for client-side pagination
+      // No search parameter - load all employees for client-side pagination
       search: undefined
     };
 
-    this.bambooHRService.getEmployees(params).subscribe({
+    this.bambooHRService.getAllEmployees(params).subscribe({
       next: (response) => {
         if (response.success) {
-          this.allEmployees = (response.data.data || []).map((employee: Employee) => ({
+          const employees = (response.data.data || []).map((employee: Employee) => ({
             ...employee,
             displayName: `${employee.first_name} ${employee.last_name}`,
             departmentDisplay: typeof employee.department === 'string' 
@@ -189,14 +225,16 @@ export class EmployeesComponent implements OnInit, OnDestroy {
               : employee.department?.name || 'N/A',
             statusDisplay: employee.status || 'Unknown'
           }));
-          this.totalEmployees = this.allEmployees.length;
+          
+          this.allEmployees.set(employees);
+          this.totalEmployees.set(employees.length);
           this.updateStats();
         }
-        this.loading = false;
+        this.loading.set(false);
       },
       error: (error) => {
         console.error('Error loading employees:', error);
-        this.loading = false;
+        this.loading.set(false);
       }
     });
   }
@@ -214,26 +252,29 @@ export class EmployeesComponent implements OnInit, OnDestroy {
 
   onSearchChange(): void {
     // Trigger debounced search
-    this.searchSubject.next(this.searchTerm);
+    this.searchSubject.next(this.searchTerm());
   }
 
   updateStats(): void {
-    this.activeEmployees = this.allEmployees.filter(emp => 
+    const employees = this.allEmployees();
+    this.activeEmployees.set(employees.filter(emp => 
       emp.status === 'Active' || emp.status === 'Full-Time'
-    ).length;
+    ).length);
     
-    this.departments = [...new Set(
-      this.allEmployees
+    const departmentSet = new Set(
+      employees
         .map(emp => {
           if (typeof emp.department === 'string') {
             return emp.department;
           } else if (emp.department && typeof emp.department === 'object' && 'name' in emp.department) {
-            return emp.department.name;
-          }
-          return null;
-        })
+              return emp.department.name;
+            }
+            return null;
+          })
         .filter((dept): dept is string => dept !== null && dept.trim() !== '')
-    )];
+    );
+    
+    this.departments.set([...departmentSet]);
   }
 
   getInitials(firstName: string, lastName: string): string {

@@ -1,6 +1,7 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
 export interface BambooHRStatus {
@@ -152,6 +153,23 @@ export interface SyncProgress {
 export class BambooHRService {
   private apiUrl = `${environment.apiUrl}/api/v1/bamboohr`;
   
+  // Signals for reactive state management
+  private statusSignal = signal<BambooHRStatus | null>(null);
+  private employeesSignal = signal<Employee[]>([]);
+  private loadingSignal = signal<boolean>(false);
+  
+  // Public readonly signals
+  public status = this.statusSignal.asReadonly();
+  public employees = this.employeesSignal.asReadonly();
+  public loading = this.loadingSignal.asReadonly();
+  
+  // Computed signals for derived state
+  public employeeCount = computed(() => this.employeesSignal().length);
+  public activeEmployees = computed(() => 
+    this.employeesSignal().filter(emp => emp.status === 'Active').length
+  );
+  
+  // Legacy observable for backward compatibility
   private statusSubject = new BehaviorSubject<BambooHRStatus | null>(null);
   public status$ = this.statusSubject.asObservable();
 
@@ -265,6 +283,43 @@ export class BambooHRService {
       ? `${this.apiUrl}/employees?${queryString}`
       : `${this.apiUrl}/employees`;
     return this.http.get<{ success: boolean; data: any }>(url);
+  }
+
+  /**
+   * Get all employees without pagination (for client-side grid)
+   */
+  getAllEmployees(params: {
+    status?: string;
+    department_id?: number;
+    search?: string;
+  } = {}): Observable<{ success: boolean; data: any }> {
+    this.loadingSignal.set(true);
+    
+    const queryParams = new URLSearchParams();
+    
+    // Always set all=true to fetch all employees
+    queryParams.set('all', 'true');
+    
+    if (params.status) queryParams.set('status', params.status);
+    if (params.department_id) queryParams.set('department_id', params.department_id.toString());
+    if (params.search) queryParams.set('search', params.search);
+    
+    const queryString = queryParams.toString();
+    const url = `${this.apiUrl}/employees?${queryString}`;
+    
+    return this.http.get<{ success: boolean; data: any }>(url).pipe(
+      map(response => {
+        if (response.success && response.data?.data) {
+          this.employeesSignal.set(response.data.data);
+        }
+        this.loadingSignal.set(false);
+        return response;
+      }),
+      catchError(error => {
+        this.loadingSignal.set(false);
+        throw error;
+      })
+    );
   }
 
   /**

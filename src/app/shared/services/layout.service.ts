@@ -1,5 +1,4 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { Injectable, signal } from '@angular/core';
 
 export interface User {
   name: string;
@@ -25,97 +24,84 @@ export interface SidebarItem {
   providedIn: 'root'
 })
 export class LayoutService {
-  private userSubject = new BehaviorSubject<User>({
+  // Signals for reactive state management
+  private readonly userSignal = signal<User>({
     name: 'John Doe',
     email: 'john.doe@example.com',
     avatar: ''
   });
 
-  private navbarItemsSubject = new BehaviorSubject<NavbarItem[]>([
+  private readonly navbarItemsSignal = signal<NavbarItem[]>([
     { label: 'Dashboard', route: '/' },
     { label: 'Users', route: '/users' },
     { label: 'Reports', route: '/reports' },
     { label: 'Settings', route: '/settings' }
   ]);
 
-  private sidebarItemsSubject = new BehaviorSubject<SidebarItem[]>([
-    {
-      label: 'Dashboard',
-      route: '/',
-      icon: 'fas fa-tachometer-alt'
-    },
-    {
-      label: 'Adminstration',
-      icon: 'fas fa-users',
-      children: [
-        { label: 'Employees', route: '/employees', badge: '2.8k' },
-      ]
-    },
-    {
-      label: 'Analytics',
-      icon: 'fas fa-chart-bar',
-      children: [
-        { label: 'Overview', route: '/analytics' },
-        { label: 'Reports', route: '/analytics/reports' },
-        { label: 'Sprint Metrics', route: '/analytics/sprint-metrics' },
-        { label: 'Export', route: '/analytics/export' }
-      ]
-    },
-    {
-      label: 'Integrations',
-      icon: 'fas fa-plug',
-      children: [
-        { label: 'Azure DevOps', route: '/integrations/azure-devops', icon: 'fab fa-microsoft' },
-        { label: 'Azure DevOps Admin', route: '/integrations/azure-devops-admin', icon: 'fas fa-cogs' },
-        { label: 'BambooHR', route: '/integrations/bamboohr', icon: 'fas fa-users-cog' }
-      ]
-    },
-    {
-      label: 'Settings',
-      icon: 'fas fa-cog',
-      children: [
-        { label: 'General', route: '/settings' },
-        { label: 'Security', route: '/settings/security' },
-        { label: 'Notifications', route: '/settings/notifications' }
-      ]
-    },
-    {
-      label: 'Support',
-      route: '/support',
-      icon: 'fas fa-life-ring',
-      badge: 'New',
-      badgeColor: 'success'
-    }
-  ]);
+  // Static sidebar items
+  private readonly sidebarItemsSignal = signal([
+      {
+        label: 'Dashboard',
+        route: '/',
+        icon: 'fas fa-tachometer-alt'
+      },
+      {
+        label: 'Adminstration',
+        icon: 'fas fa-users',
+        children: [
+          { label: 'Employees', route: '/employees' },
+          { label: 'Inatech Employees', route: '/inatech-employees' },
+          { label: 'Attendance', route: '/attendance' },
+        ]
+      },
+      {
+        label: 'Analytics',
+        icon: 'fas fa-chart-bar',
+        children: [
+          { label: 'Overview', route: '/analytics' },
+          { label: 'Reports', route: '/analytics/reports' },
+          { label: 'Sprint Metrics', route: '/analytics/sprint-metrics' },
+          { label: 'Export', route: '/analytics/export' }
+        ]
+      },
+      {
+        label: 'Integrations',
+        icon: 'fas fa-plug',
+        children: [
+          { label: 'Azure DevOps', route: '/integrations/azure-devops', icon: 'fab fa-microsoft' },
+          { label: 'Azure DevOps Admin', route: '/integrations/azure-devops-admin', icon: 'fas fa-cogs' },
+          { label: 'BambooHR', route: '/integrations/bamboohr', icon: 'fas fa-users-cog' }
+        ]
+      },
+      {
+        label: 'Settings',
+        icon: 'fas fa-cog',
+        children: [
+          { label: 'General', route: '/settings' },
+          { label: 'Security', route: '/settings/security' },
+          { label: 'Notifications', route: '/settings/notifications' }
+        ]
+      },
+      {
+        label: 'Support',
+        route: '/support',
+        icon: 'fas fa-life-ring',
+        badge: 'New',
+        badgeColor: 'success' as const
+      }
+    ]);
 
-  // Observables
-  user$ = this.userSubject.asObservable();
-  navbarItems$ = this.navbarItemsSubject.asObservable();
-  sidebarItems$ = this.sidebarItemsSubject.asObservable();
+  // Public signals for components to subscribe to
+  user = this.userSignal.asReadonly();
+  navbarItems = this.navbarItemsSignal.asReadonly();
+  sidebarItems = this.sidebarItemsSignal.asReadonly();
 
-  // Getters for current values
-  get user(): User {
-    return this.userSubject.value;
-  }
-
-  get navbarItems(): NavbarItem[] {
-    return this.navbarItemsSubject.value;
-  }
-
-  get sidebarItems(): SidebarItem[] {
-    return this.sidebarItemsSubject.value;
-  }
-
-  // Methods to update layout data
+  // Methods to update layout data using signals
   updateUser(user: User): void {
-    this.userSubject.next(user);
+    this.userSignal.set(user);
   }
 
   updateNavbarItems(items: NavbarItem[]): void {
-    this.navbarItemsSubject.next(items);
-  }
-
-  updateSidebarItems(items: SidebarItem[]): void {
-    this.sidebarItemsSubject.next(items);
+    this.navbarItemsSignal.set(items);
   }
 }

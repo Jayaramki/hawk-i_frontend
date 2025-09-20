@@ -1,0 +1,165 @@
+<div class="attendance-import-container">
+  <div class="card">
+    <div class="card-header">
+      <h2>Import Attendance Data</h2>
+      <p class="text-muted">Upload a spreadsheet file to import attendance records</p>
+    </div>
+
+    <div class="card-body">
+      <!-- File Upload Section -->
+      <div class="upload-section">
+        <div class="upload-area" [class.dragover]="false">
+          <div class="upload-content">
+            <i class="pi pi-cloud-upload" style="font-size: 3rem; color: #6c757d;"></i>
+            <h4>Choose File or Drag & Drop</h4>
+            <p>Select an Excel (.xlsx, .xls) or CSV file</p>
+            <input 
+              type="file" 
+              id="fileInput"
+              class="file-input" 
+              accept=".xlsx,.xls,.csv"
+              (change)="onFileSelected($event)"
+            />
+            <button 
+              type="button" 
+              class="btn btn-outline-primary"
+              (click)="document.getElementById('fileInput')?.click()"
+            >
+              <i class="pi pi-upload"></i> Select File
+            </button>
+          </div>
+        </div>
+
+        <!-- Selected File Info -->
+        <div *ngIf="selectedFile" class="selected-file">
+          <div class="file-info">
+            <i class="pi pi-file" style="color: #28a745;"></i>
+            <div class="file-details">
+              <strong>{{ selectedFile.name }}</strong>
+              <small class="text-muted">{{ getFileSize(selectedFile.size) }}</small>
+            </div>
+            <button 
+              type="button" 
+              class="btn btn-sm btn-outline-danger"
+              (click)="onClearFile()"
+            >
+              <i class="pi pi-times"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Upload Progress -->
+        <div *ngIf="isUploading" class="upload-progress">
+          <div class="progress">
+            <div 
+              class="progress-bar" 
+              [style.width.%]="uploadProgress"
+              role="progressbar"
+            ></div>
+          </div>
+          <small class="text-muted">Uploading and processing file...</small>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <button 
+          type="button" 
+          class="btn btn-primary"
+          [disabled]="!selectedFile || isUploading"
+          (click)="onUpload()"
+        >
+          <i class="pi pi-upload"></i>
+          {{ isUploading ? 'Uploading...' : 'Upload & Import' }}
+        </button>
+        
+        <button 
+          type="button" 
+          class="btn btn-outline-secondary"
+          (click)="onDownloadTemplate()"
+        >
+          <i class="pi pi-download"></i> Download Template
+        </button>
+      </div>
+
+      <!-- Import Results -->
+      <div *ngIf="showResult && importResult" class="import-results">
+        <div class="result-card" [class.success]="importResult.success" [class.error]="!importResult.success">
+          <div class="result-header">
+            <i [class]="importResult.success ? 'pi pi-check-circle' : 'pi pi-times-circle'"></i>
+            <h4>{{ importResult.success ? 'Import Successful' : 'Import Failed' }}</h4>
+          </div>
+          
+          <div class="result-body">
+            <p>{{ importResult.message }}</p>
+            
+            <div *ngIf="importResult.data" class="result-stats">
+              <div class="stat-item">
+                <span class="stat-label">Total Rows:</span>
+                <span class="stat-value">{{ importResult.data.total_rows }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Processed:</span>
+                <span class="stat-value success">{{ importResult.data.processed_count }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Errors:</span>
+                <span class="stat-value error">{{ importResult.data.error_count }}</span>
+              </div>
+            </div>
+
+            <!-- Error Details -->
+            <div *ngIf="importResult.data?.errors && importResult.data.errors.length > 0" class="error-details">
+              <h5>Error Details:</h5>
+              <ul class="error-list">
+                <li *ngFor="let error of importResult.data.errors">{{ error }}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Instructions -->
+      <div class="instructions">
+        <h5>File Format Requirements:</h5>
+        <ul>
+          <li><strong>Required Columns:</strong> employee_id, date, in_time, out_time</li>
+          <li><strong>Date Format:</strong> YYYY-MM-DD (e.g., 2024-01-15)</li>
+          <li><strong>Time Format:</strong> HH:MM:SS (e.g., 09:00:00)</li>
+          <li><strong>Employee ID:</strong> Must match existing BambooHR employee IDs</li>
+          <li><strong>File Size:</strong> Maximum 10MB</li>
+        </ul>
+        
+        <div class="sample-data">
+          <h6>Sample Data:</h6>
+          <div class="table-responsive">
+            <table class="table table-sm table-bordered">
+              <thead>
+                <tr>
+                  <th>employee_id</th>
+                  <th>date</th>
+                  <th>in_time</th>
+                  <th>out_time</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>12345</td>
+                  <td>2024-01-15</td>
+                  <td>09:00:00</td>
+                  <td>17:30:00</td>
+                </tr>
+                <tr>
+                  <td>12346</td>
+                  <td>2024-01-15</td>
+                  <td>08:30:00</td>
+                  <td>18:00:00</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

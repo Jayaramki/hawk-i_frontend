@@ -1,0 +1,191 @@
+// Inatech Employees Component Styles
+
+.container {
+  max-width: 1200px;
+}
+
+// Table styles
+.table-responsive {
+  overflow-x: auto;
+}
+
+// Status badges
+.status-badge {
+  @apply px-2 py-1 text-xs font-semibold rounded-full;
+  
+  &.active {
+    @apply bg-green-100 text-green-800;
+  }
+  
+  &.inactive {
+    @apply bg-red-100 text-red-800;
+  }
+}
+
+// Similarity percentage colors
+.similarity-high {
+  @apply text-green-600;
+}
+
+.similarity-medium {
+  @apply text-yellow-600;
+}
+
+.similarity-low {
+  @apply text-red-600;
+}
+
+// Modal styles
+.modal-overlay {
+  @apply fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50;
+}
+
+.modal-content {
+  @apply relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white;
+}
+
+.modal-content-large {
+  @apply relative top-10 mx-auto p-5 border w-4/5 max-w-4xl shadow-lg rounded-md bg-white;
+}
+
+// Form styles
+.form-input {
+  @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+}
+
+.form-select {
+  @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+}
+
+// Button styles
+.btn {
+  @apply px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200;
+  
+  &.btn-primary {
+    @apply text-white bg-blue-600 hover:bg-blue-700;
+  }
+  
+  &.btn-secondary {
+    @apply text-gray-700 bg-gray-100 hover:bg-gray-200;
+  }
+  
+  &.btn-danger {
+    @apply text-red-600 hover:text-red-900;
+  }
+  
+  &.btn-success {
+    @apply text-green-600 hover:text-green-900;
+  }
+  
+  &:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+}
+
+// Loading spinner
+.loading-spinner {
+  @apply animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600;
+}
+
+// Pagination styles
+.pagination {
+  @apply relative z-0 inline-flex rounded-md shadow-sm -space-x-px;
+}
+
+.pagination-btn {
+  @apply relative inline-flex items-center px-4 py-2 border text-sm font-medium;
+  
+  &.active {
+    @apply bg-blue-50 border-blue-500 text-blue-600;
+  }
+  
+  &.inactive {
+    @apply bg-white border-gray-300 text-gray-500 hover:bg-gray-50;
+  }
+}
+
+// Mapping suggestions
+.mapping-suggestion {
+  @apply border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors duration-200;
+}
+
+// Empty state
+.empty-state {
+  @apply text-center py-12;
+  
+  .empty-icon {
+    @apply mx-auto h-12 w-12 text-gray-400;
+  }
+  
+  .empty-title {
+    @apply mt-2 text-sm font-medium text-gray-900;
+  }
+  
+  .empty-description {
+    @apply mt-1 text-sm text-gray-500;
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .modal-content {
+    @apply w-11/12;
+  }
+  
+  .modal-content-large {
+    @apply w-11/12;
+  }
+}
+
+// Animation for modals
+.modal-enter {
+  animation: modalEnter 0.3s ease-out;
+}
+
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// Hover effects
+.hover-lift {
+  @apply transition-transform duration-200 hover:-translate-y-1;
+}
+
+// Focus styles
+.focus-ring {
+  @apply focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+}
+
+// Text truncation
+.text-truncate {
+  @apply truncate;
+}
+
+// Flex utilities
+.flex-center {
+  @apply flex items-center justify-center;
+}
+
+.flex-between {
+  @apply flex items-center justify-between;
+}
+
+// Spacing utilities
+.space-y-3 > * + * {
+  @apply mt-3;
+}
+
+.space-x-2 > * + * {
+  @apply ml-2;
+}
+
+.space-x-3 > * + * {
+  @apply ml-3;
+}
