@@ -15,7 +15,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
   ],
   template: `
     <div class="w-full">
-      <label *ngIf="label" [for]="id" class="block text-sm font-medium text-gray-700 mb-1">
+      <label *ngIf="label" [for]="id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
         {{ label }}
         <span *ngIf="required" class="text-danger-500">*</span>
       </label>
@@ -31,16 +31,16 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
           (input)="onInput($event)"
           (blur)="onBlur()"
           (focus)="onFocus()"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-50 dark:disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed"
         />
         
         <div *ngIf="icon" class="absolute inset-y-0 right-0 flex items-center pr-3">
-          <i [class]="icon" class="text-gray-400"></i>
+          <i [class]="icon" class="text-gray-400 dark:text-gray-500"></i>
         </div>
       </div>
       
       <p *ngIf="error" class="mt-1 text-sm text-danger-600">{{ error }}</p>
-      <p *ngIf="hint && !error" class="mt-1 text-sm text-gray-500">{{ hint }}</p>
+      <p *ngIf="hint && !error" class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ hint }}</p>
     </div>
   `,
   styles: []
@@ -64,7 +64,7 @@ export class InputComponent implements ControlValueAccessor {
   private onTouched = () => {};
 
   get inputClasses(): string {
-    const baseClasses = 'w-full border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed';
+    const baseClasses = 'w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-50 dark:disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed';
     
     const sizeClasses = {
       sm: 'px-2 py-1 text-sm',

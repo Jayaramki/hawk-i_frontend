@@ -8,11 +8,13 @@ import { ButtonComponent } from '../../shared/components/button/button.component
 import { CardComponent } from '../../shared/components/card/card.component';
 import { InputComponent } from '../../shared/components/input/input.component';
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
+import { ClientGridComponent, GridColumn, GridAction } from '../../shared/components/client-grid/client-grid.component';
+import { ModalComponent } from '../../shared/components/modal/modal.component';
 
 @Component({
   selector: 'app-inatech-employees',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonComponent, CardComponent, InputComponent, LayoutComponent],
+  imports: [CommonModule, FormsModule, ButtonComponent, CardComponent, InputComponent, LayoutComponent, ClientGridComponent, ModalComponent],
   templateUrl: './inatech-employees.component.html',
   styleUrls: ['./inatech-employees.component.scss']
 })
@@ -26,9 +28,6 @@ export class InatechEmployeesComponent implements OnInit, OnDestroy {
   error: string | null = null;
   searchTerm = '';
   statusFilter = '';
-  currentPage = 1;
-  totalPages = 1;
-  totalItems = 0;
 
   // Modal states
   showCreateModal = false;
@@ -45,6 +44,35 @@ export class InatechEmployeesComponent implements OnInit, OnDestroy {
   };
 
   editEmployee: Partial<InatechEmployee> = {};
+
+  // Grid configuration
+  gridColumns: GridColumn[] = [
+    { key: 'employee_name', title: 'Employee Name', sortable: true, width: '300px' },
+    { key: 'ina_emp_id', title: 'INA ID', sortable: true },
+    { key: 'status', title: 'Status', sortable: true },
+    { key: 'mappingStatus', title: 'Mapping', sortable: true }
+  ];
+
+  gridActions: GridAction[] = [
+    {
+      label: 'Edit',
+      icon: 'fas fa-edit',
+      class: 'text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300',
+      action: (employee: any) => this.editEmployeeRecord(employee)
+    },
+    {
+      label: 'Map',
+      icon: 'fas fa-link',
+      class: 'text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300',
+      action: (employee: any) => this.openMappingModal(employee)
+    },
+    {
+      label: 'Delete',
+      icon: 'fas fa-trash',
+      class: 'text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300',
+      action: (employee: any) => this.deleteEmployee(employee)
+    }
+  ];
 
   constructor(
     private readonly inatechEmployeeService: InatechEmployeeService,
@@ -73,26 +101,35 @@ export class InatechEmployeesComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  // Grid data transformation with client-side filtering
+  get gridData(): any[] {
+    let filteredEmployees = this.employees;
+    
+    // Apply status filter if set
+    if (this.statusFilter) {
+      filteredEmployees = filteredEmployees.filter(employee => employee.status === this.statusFilter);
+    }
+    
+    return filteredEmployees.map(employee => ({
+      ...employee,
+      mappingStatus: 'Unmapped' // This would be determined by checking mappings
+    }));
+  }
+
   /**
-   * Load employees with current filters
+   * Load all employees (client-side grid handles pagination and filtering)
    */
   loadEmployees(): void {
     this.loading = true;
     this.error = null;
 
-    this.inatechEmployeeService.getEmployees({
-      search: this.searchTerm || undefined,
-      status: this.statusFilter || undefined,
-      page: this.currentPage
-    }).pipe(takeUntil(this.destroy$))
+    this.inatechEmployeeService.getEmployees()
+      .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
           this.loading = false;
           if (response.success) {
             this.employees = response.data.data;
-            this.currentPage = response.data.current_page;
-            this.totalPages = response.data.last_page;
-            this.totalItems = response.data.total;
           }
         },
         error: (error) => {
@@ -115,17 +152,9 @@ export class InatechEmployeesComponent implements OnInit, OnDestroy {
    */
   onStatusFilterChange(status: string): void {
     this.statusFilter = status;
-    this.currentPage = 1;
-    this.loadEmployees();
+    // Client-side grid will handle filtering
   }
 
-  /**
-   * Handle page change
-   */
-  onPageChange(page: number): void {
-    this.currentPage = page;
-    this.loadEmployees();
-  }
 
   /**
    * Show create employee modal
@@ -160,6 +189,13 @@ export class InatechEmployeesComponent implements OnInit, OnDestroy {
           console.error('Error creating employee:', error);
         }
       });
+  }
+
+  /**
+   * Edit employee record (called from grid action)
+   */
+  editEmployeeRecord(employee: InatechEmployee): void {
+    this.showEditEmployeeModal(employee);
   }
 
   /**
@@ -300,17 +336,4 @@ export class InatechEmployeesComponent implements OnInit, OnDestroy {
     this.mappingSuggestions = [];
   }
 
-  /**
-   * Get pagination array
-   */
-  getPaginationArray(): number[] {
-    const pages: number[] = [];
-    const startPage = Math.max(1, this.currentPage - 2);
-    const endPage = Math.min(this.totalPages, this.currentPage + 2);
-
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(i);
-    }
-    return pages;
-  }
 }

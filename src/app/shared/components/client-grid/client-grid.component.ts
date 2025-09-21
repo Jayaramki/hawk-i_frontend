@@ -172,8 +172,10 @@ export class ClientGridComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['data'] || changes['searchTerm'] || changes['searchFields']) {
-      this.currentPage = 1; // Reset to first page when data changes
+    // Only reset pagination if the data actually changed (not just reference)
+    if ((changes['data'] && changes['data'].previousValue !== changes['data'].currentValue) || 
+        changes['searchTerm'] || changes['searchFields']) {
+      this.currentPage = 1;
       this.filterAndPaginate();
     }
   }

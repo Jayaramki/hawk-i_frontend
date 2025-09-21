@@ -49,8 +49,7 @@ export class LayoutService {
         label: 'Adminstration',
         icon: 'fas fa-users',
         children: [
-          { label: 'Employees', route: '/employees' },
-          { label: 'Inatech Employees', route: '/inatech-employees' },
+          { label: 'Employee Management', route: '/employees' },
           { label: 'Attendance', route: '/attendance' },
         ]
       },

@@ -83,30 +83,18 @@ export class InatechEmployeeService {
   constructor(private http: HttpClient) {}
 
   /**
-   * Get all Inatech employees with optional search and filter
+   * Get all Inatech employees (no pagination - client-side grid handles it)
    */
-  getEmployees(params?: {
-    search?: string;
-    status?: string;
-    page?: number;
-  }): Observable<InatechEmployeeListResponse> {
+  getEmployees(): Observable<InatechEmployeeListResponse> {
     this.loadingSignal.set(true);
     this.errorSignal.set(null);
 
-    let queryParams = '';
-    if (params) {
-      const searchParams = new URLSearchParams();
-      if (params.search) searchParams.append('search', params.search);
-      if (params.status) searchParams.append('status', params.status);
-      if (params.page) searchParams.append('page', params.page.toString());
-      queryParams = searchParams.toString() ? `?${searchParams.toString()}` : '';
-    }
-
-    return this.http.get<InatechEmployeeListResponse>(`${this.apiUrl}${queryParams}`)
+    return this.http.get<InatechEmployeeListResponse>(`${this.apiUrl}`)
       .pipe(
         map(response => {
           this.loadingSignal.set(false);
           if (response.success) {
+            // Store all employees for client-side grid
             this.employeesSignal.set(response.data.data);
           }
           return response;

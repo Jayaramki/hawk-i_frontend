@@ -31,15 +31,11 @@ export const routes: Routes = [
   },
   {
     path: 'employees',
-    loadComponent: () => import('./pages/employees/employees.component').then(m => m.EmployeesComponent)
+    loadComponent: () => import('./pages/employees-unified/employees-unified.component').then(m => m.EmployeesUnifiedComponent)
   },
   {
     path: 'attendance',
     loadComponent: () => import('./pages/attendance/attendance.component').then(m => m.AttendanceComponent)
-  },
-  {
-    path: 'inatech-employees',
-    loadComponent: () => import('./pages/inatech-employees/inatech-employees.component').then(m => m.InatechEmployeesComponent)
   },
   {
     path: '**',

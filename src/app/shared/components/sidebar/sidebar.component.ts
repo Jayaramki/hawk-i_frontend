@@ -1,7 +1,8 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { SidebarItem } from '../../services/layout.service';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-sidebar',
@@ -55,6 +56,7 @@ import { SidebarItem } from '../../services/layout.service';
                                  <a
                    *ngFor="let child of item.children"
                    [routerLink]="child.route"
+                   [routerLinkActiveOptions]="{exact: true}"
                    routerLinkActive="bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100"
                    class="group flex items-center px-2 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 rounded-md hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
                  >
@@ -75,6 +77,7 @@ import { SidebarItem } from '../../services/layout.service';
             <a
               *ngIf="!item.children || item.children.length === 0"
               [routerLink]="item.route"
+              [routerLinkActiveOptions]="item.route === '/' ? {exact: true} : {exact: false}"
               routerLinkActive="bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100"
               class="group flex items-center px-2 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 rounded-md hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
               [title]="!isOpen ? item.label : ''"
@@ -127,7 +130,7 @@ import { SidebarItem } from '../../services/layout.service';
   `,
   styles: []
 })
-export class SidebarComponent {
+export class SidebarComponent implements OnInit {
   @Input() brandName = 'Hawk-i';
   @Input() logo?: string;
   @Input() navigationItems: SidebarItem[] = [];
@@ -137,6 +140,37 @@ export class SidebarComponent {
   @Input() width = 'w-64';
 
   openSections: Set<string> = new Set();
+
+  constructor(private router: Router) {}
+
+  ngOnInit(): void {
+    // Listen to route changes and auto-expand sections
+    this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe((event: NavigationEnd) => {
+        this.autoExpandSections(event.url);
+      });
+
+    // Auto-expand sections on initial load
+    this.autoExpandSections(this.router.url);
+  }
+
+  private autoExpandSections(currentUrl: string): void {
+    // Clear existing open sections
+    this.openSections.clear();
+
+    // Find the section that contains the current route
+    for (const item of this.navigationItems) {
+      if (item.children && item.children.length > 0) {
+        for (const child of item.children) {
+          if (child.route && currentUrl.startsWith(child.route)) {
+            this.openSections.add(item.label);
+            break;
+          }
+        }
+      }
+    }
+  }
 
   get sidebarClasses(): string {
     const baseClasses = 'bg-white dark:bg-gray-800 shadow-soft flex flex-col transition-all duration-300 ease-in-out';

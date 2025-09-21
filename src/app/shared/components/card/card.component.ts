@@ -7,16 +7,16 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule],
   template: `
     <div [class]="cardClasses">
-      <div *ngIf="header" class="px-6 py-4 border-b border-gray-200 bg-gray-50 rounded-t-lg">
-        <h3 class="text-lg font-semibold text-gray-900">{{ header }}</h3>
-        <p *ngIf="subtitle" class="mt-1 text-sm text-gray-600">{{ subtitle }}</p>
+      <div *ngIf="header" class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 rounded-t-lg">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ header }}</h3>
+        <p *ngIf="subtitle" class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ subtitle }}</p>
       </div>
       
       <div class="p-6">
         <ng-content></ng-content>
       </div>
       
-      <div *ngIf="footer" class="px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-lg">
+      <div *ngIf="footer" class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 rounded-b-lg">
         <ng-content select="[card-footer]"></ng-content>
       </div>
     </div>
@@ -31,7 +31,7 @@ export class CardComponent {
   @Input() padding: 'none' | 'sm' | 'md' | 'lg' = 'md';
 
   get cardClasses(): string {
-    const baseClasses = 'bg-white rounded-lg border border-gray-200 overflow-hidden';
+    const baseClasses = 'bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden';
     
     const shadowClasses = {
       none: '',
