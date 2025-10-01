@@ -10,4 +10,4 @@ deployment:
     - echo "Deploying Angular build to $DEPLOYPATH"
     - /bin/cp -R dist/* $DEPLOYPATH/
 
-    - echo "Angular deployment completed!"
+    - echo "Angular deployment completed!!"
