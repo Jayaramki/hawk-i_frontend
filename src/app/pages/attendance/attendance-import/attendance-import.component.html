@@ -15,7 +15,7 @@
             <p>Select an Excel (.xlsx, .xls) or CSV file</p>
             <input 
               type="file" 
-              id="fileInput"
+              #fileInput
               class="file-input" 
               accept=".xlsx,.xls,.csv"
               (change)="onFileSelected($event)"
@@ -23,7 +23,7 @@
             <button 
               type="button" 
               class="btn btn-outline-primary"
-              (click)="document.getElementById('fileInput')?.click()"
+              (click)="fileInput.click()"
             >
               <i class="pi pi-upload"></i> Select File
             </button>
@@ -35,8 +35,8 @@
           <div class="file-info">
             <i class="pi pi-file" style="color: #28a745;"></i>
             <div class="file-details">
-              <strong>{{ selectedFile.name }}</strong>
-              <small class="text-muted">{{ getFileSize(selectedFile.size) }}</small>
+              <strong>{{ selectedFile?.name }}</strong>
+                <small class="text-muted">{{ getFileSize(selectedFile?.size || 0) }}</small>
             </div>
             <button 
               type="button" 
@@ -84,27 +84,27 @@
 
       <!-- Import Results -->
       <div *ngIf="showResult && importResult" class="import-results">
-        <div class="result-card" [class.success]="importResult.success" [class.error]="!importResult.success">
+        <div class="result-card" [class.success]="importResult?.success" [class.error]="!importResult?.success">
           <div class="result-header">
-            <i [class]="importResult.success ? 'pi pi-check-circle' : 'pi pi-times-circle'"></i>
-            <h4>{{ importResult.success ? 'Import Successful' : 'Import Failed' }}</h4>
+            <i [class]="importResult?.success ? 'pi pi-check-circle' : 'pi pi-times-circle'"></i>
+            <h4>{{ importResult?.success ? 'Import Successful' : 'Import Failed' }}</h4>
           </div>
           
           <div class="result-body">
-            <p>{{ importResult.message }}</p>
+            <p>{{ importResult?.message }}</p>
             
-            <div *ngIf="importResult.data" class="result-stats">
+            <div *ngIf="importResult?.data" class="result-stats">
               <div class="stat-item">
                 <span class="stat-label">Total Rows:</span>
-                <span class="stat-value">{{ importResult.data.total_rows }}</span>
+                <span class="stat-value">{{ importResult?.data?.total_rows || 0 }}</span>
               </div>
               <div class="stat-item">
                 <span class="stat-label">Processed:</span>
-                <span class="stat-value success">{{ importResult.data.processed_count }}</span>
+                <span class="stat-value success">{{ importResult?.data?.processed_count || 0 }}</span>
               </div>
               <div class="stat-item">
                 <span class="stat-label">Errors:</span>
-                <span class="stat-value error">{{ importResult.data.error_count }}</span>
+                <span class="stat-value error">{{ importResult?.data?.error_count || 0 }}</span>
               </div>
             </div>
 

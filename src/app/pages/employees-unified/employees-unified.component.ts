@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, TemplateRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
@@ -371,6 +371,20 @@ import { ClientGridComponent, GridColumn, GridAction } from '../../shared/compon
             </div>
           </div>
         </app-modal>
+
+        <!-- Mapping Status Template -->
+        <ng-template #mappingStatusTemplate let-item>
+          <span 
+            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+            [class]="item.mappingStatus === 'Mapped' 
+              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+              : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'">
+            <i 
+              [class]="item.mappingStatus === 'Mapped' ? 'fas fa-check-circle mr-1' : 'fas fa-times-circle mr-1'">
+            </i>
+            {{ item.mappingStatus }}
+          </span>
+        </ng-template>
     </app-layout>
   `,
   styles: []
@@ -395,6 +409,9 @@ export class EmployeesUnifiedComponent implements OnInit, OnDestroy {
     status: 'active'
   };
 
+  // Template references
+  @ViewChild('mappingStatusTemplate', { static: true }) mappingStatusTemplate!: TemplateRef<any>;
+
   // Tab configuration
   tabs: TabItem[] = [
     { id: 'bamboohr', label: 'BambooHR Employees', icon: 'fas fa-users' },
@@ -408,14 +425,24 @@ export class EmployeesUnifiedComponent implements OnInit, OnDestroy {
     { key: 'department', title: 'Department', sortable: true },
     { key: 'jobTitle', title: 'Job Title', sortable: true },
     { key: 'status', title: 'Status', sortable: true },
-    { key: 'mappingStatus', title: 'Mapping', sortable: true }
+    { 
+      key: 'mappingStatus', 
+      title: 'Mapping', 
+      sortable: true,
+      template: this.mappingStatusTemplate
+    }
   ];
 
   inatechGridColumns: GridColumn[] = [
     { key: 'name', title: 'Employee', width: '300px' },
     { key: 'ina_emp_id', title: 'INA ID', sortable: true },
     { key: 'status', title: 'Status', sortable: true },
-    { key: 'mappingStatus', title: 'Mapping', sortable: true }
+    { 
+      key: 'mappingStatus', 
+      title: 'Mapping', 
+      sortable: true,
+      template: this.mappingStatusTemplate
+    }
   ];
 
   mappingGridColumns: GridColumn[] = [
@@ -627,7 +654,8 @@ export class EmployeesUnifiedComponent implements OnInit, OnDestroy {
           if (response.success) {
             console.log('Mapping created successfully:', response);
             this.closeMappingModal();
-            // Reload all data to update mapping status
+            // Refresh mappings and reload all data to update mapping status
+            this.unifiedEmployeeService.refreshMappings();
             this.loadAllEmployees();
           }
         },
@@ -718,6 +746,9 @@ export class EmployeesUnifiedComponent implements OnInit, OnDestroy {
         .subscribe({
           next: (response) => {
             if (response.success) {
+              console.log('Mapping removed successfully:', response);
+              // Refresh mappings and reload all data to update mapping status
+              this.unifiedEmployeeService.refreshMappings();
               this.loadAllEmployees();
             }
           },

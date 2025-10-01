@@ -1,0 +1,13 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/tapntrac/public_html/hawk-i.tapntrack.in
+
+    - echo "Building Angular frontend..."
+    - npm install
+    - npm run build -- --configuration production
+
+    - echo "Deploying Angular build to $DEPLOYPATH"
+    - /bin/cp -R dist/* $DEPLOYPATH/
+
+    - echo "Angular deployment completed!"

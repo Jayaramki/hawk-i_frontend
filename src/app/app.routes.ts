@@ -1,41 +1,57 @@
 import { Routes } from '@angular/router';
 
+// Static imports for better AOT compilation
+import { DashboardComponent } from './pages/dashboard/dashboard.component';
+import { LoginComponent } from './pages/auth/login/login.component';
+import { SignoutComponent } from './pages/auth/signout/signout.component';
+import { SprintMetricsComponent } from './pages/analytics/sprint-metrics/sprint-metrics.component';
+import { AzureDevOpsComponent } from './pages/integrations/azure-devops/azure-devops.component';
+import { AzureDevOpsAdminComponent } from './pages/integrations/azure-devops-admin/azure-devops-admin.component';
+import { BambooHRComponent } from './pages/integrations/bamboohr/bamboohr.component';
+import { EmployeesUnifiedComponent } from './pages/employees-unified/employees-unified.component';
+import { AttendanceComponent } from './pages/attendance/attendance.component';
+import { TimeoffRequestsComponent } from './pages/administration/timeoff-requests/timeoff-requests.component';
+
 export const routes: Routes = [
   {
     path: '',
-    loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent)
+    component: DashboardComponent
   },
   {
     path: 'login',
-    loadComponent: () => import('./pages/auth/login/login.component').then(m => m.LoginComponent)
+    component: LoginComponent
   },
   {
     path: 'auth/logout',
-    loadComponent: () => import('./pages/auth/signout/signout.component').then(m => m.SignoutComponent)
+    component: SignoutComponent
   },
   {
     path: 'analytics/sprint-metrics',
-    loadComponent: () => import('./pages/analytics/sprint-metrics/sprint-metrics.component').then(m => m.SprintMetricsComponent)
+    component: SprintMetricsComponent
   },
   {
     path: 'integrations/azure-devops',
-    loadComponent: () => import('./pages/integrations/azure-devops/azure-devops.component').then(m => m.AzureDevOpsComponent)
+    component: AzureDevOpsComponent
   },
   {
     path: 'integrations/azure-devops-admin',
-    loadComponent: () => import('./pages/integrations/azure-devops-admin/azure-devops-admin.component').then(m => m.AzureDevOpsAdminComponent)
+    component: AzureDevOpsAdminComponent
   },
   {
     path: 'integrations/bamboohr',
-    loadComponent: () => import('./pages/integrations/bamboohr/bamboohr.component').then(m => m.BambooHRComponent)
+    component: BambooHRComponent
   },
   {
     path: 'employees',
-    loadComponent: () => import('./pages/employees-unified/employees-unified.component').then(m => m.EmployeesUnifiedComponent)
+    component: EmployeesUnifiedComponent
   },
   {
     path: 'attendance',
-    loadComponent: () => import('./pages/attendance/attendance.component').then(m => m.AttendanceComponent)
+    component: AttendanceComponent
+  },
+  {
+    path: 'administration/timeoff-requests',
+    component: TimeoffRequestsComponent
   },
   {
     path: '**',

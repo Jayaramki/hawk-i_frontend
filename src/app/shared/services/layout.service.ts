@@ -51,6 +51,7 @@ export class LayoutService {
         children: [
           { label: 'Employee Management', route: '/employees' },
           { label: 'Attendance', route: '/attendance' },
+          { label: 'Timeoff Requests', route: '/administration/timeoff-requests' },
         ]
       },
       {

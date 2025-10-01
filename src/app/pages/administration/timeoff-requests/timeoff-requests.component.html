@@ -1,0 +1,171 @@
+<app-layout>
+  <div class="p-6">
+    <!-- Page Header -->
+    <div class="mb-6">
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Timeoff Requests</h1>
+      <p class="text-gray-600 dark:text-gray-400">View employee timeoff requests synced from BambooHR</p>
+    </div>
+    
+    <!-- Filters Section -->
+    <div class="mb-6">
+      <app-card>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Employee</label>
+            <app-search-dropdown
+              [options]="employees()"
+              placeholder="Search employees..."
+              [clearable]="true"
+              [minSearchLength]="0"
+              [debounceTime]="300"
+              (selectionChange)="onEmployeeChange($event)">
+            </app-search-dropdown>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</label>
+            <app-search-dropdown
+              [options]="statusOptions"
+              placeholder="Select status..."
+              [clearable]="true"
+              [minSearchLength]="0"
+              [debounceTime]="300"
+              (selectionChange)="onStatusChange($event)">
+            </app-search-dropdown>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Start Date</label>
+            <input 
+              type="date"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+              [value]="startDate() ? startDate()!.toISOString().split('T')[0] : ''"
+              (change)="onStartDateChange($event)"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">End Date</label>
+            <input 
+              type="date"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+              [value]="endDate() ? endDate()!.toISOString().split('T')[0] : ''"
+              (change)="onEndDateChange($event)"
+            />
+          </div>
+        </div>
+        
+        <!-- Filter Actions -->
+        <div class="mt-4 flex justify-between items-center">
+          <div class="flex space-x-2">
+            <app-button
+              (click)="clearFilters()"
+              variant="secondary"
+              size="sm">
+              <i class="fas fa-times mr-2"></i>
+              Clear Filters
+            </app-button>
+          </div>
+          
+          <div class="text-sm text-gray-600 dark:text-gray-400">
+            {{ totalRecords() }} total requests
+          </div>
+        </div>
+      </app-card>
+    </div>
+
+    <!-- Timeoff Requests Grid -->
+    <div class="mb-6">
+      <app-card>
+        <app-server-grid
+          [data]="timeoffRequests()"
+          [columns]="columns"
+          [actions]="actions"
+          [loading]="loading()"
+          [paginationInfo]="paginationInfo()"
+          (pageChange)="onPageChange($event)"
+          (sortChange)="onSortChange($event)"
+          loadingMessage="Loading timeoff requests..."
+          emptyMessage="No timeoff requests found">
+          
+          <!-- Custom Status Column Template -->
+          <ng-template #statusTemplate let-request>
+            <span 
+              class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+              [class]="getStatusBadgeClass(request.status)">
+              {{ request.status | titlecase }}
+            </span>
+          </ng-template>
+          
+          <!-- Custom Date Column Templates -->
+          <ng-template #startDateTemplate let-request>
+            <span class="text-sm text-gray-900 dark:text-white">
+              {{ request.start_date | date:'MMM dd, yyyy' }}
+            </span>
+          </ng-template>
+          
+          <ng-template #endDateTemplate let-request>
+            <span class="text-sm text-gray-900 dark:text-white">
+              {{ request.end_date | date:'MMM dd, yyyy' }}
+            </span>
+          </ng-template>
+          
+          <ng-template #requestedDateTemplate let-request>
+            <span class="text-sm text-gray-900 dark:text-white">
+              {{ request.requested_date | date:'MMM dd, yyyy' }}
+            </span>
+          </ng-template>
+          
+        </app-server-grid>
+      </app-card>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <app-card>
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+              <i class="fas fa-clock text-yellow-600"></i>
+            </div>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Pending Requests</p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white">
+              {{ pendingCount }}
+            </p>
+          </div>
+        </div>
+      </app-card>
+
+      <app-card>
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+              <i class="fas fa-check text-green-600"></i>
+            </div>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Approved Requests</p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white">
+              {{ approvedCount }}
+            </p>
+          </div>
+        </div>
+      </app-card>
+
+      <app-card>
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+              <i class="fas fa-times text-red-600"></i>
+            </div>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Rejected Requests</p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white">
+              {{ rejectedCount }}
+            </p>
+          </div>
+        </div>
+      </app-card>
+    </div>
+  </div>
+</app-layout>

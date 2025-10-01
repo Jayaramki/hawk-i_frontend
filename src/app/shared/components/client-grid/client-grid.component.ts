@@ -97,12 +97,27 @@ export interface GridAction {
     </div>
 
     <!-- Pagination -->
-    <div *ngIf="totalPages > 1" class="px-6 py-3 border-t border-gray-200 dark:border-gray-700">
+    <div *ngIf="totalPages > 1 || showRecordsPerPage" class="px-6 py-3 border-t border-gray-200 dark:border-gray-700">
       <div class="flex items-center justify-between">
-        <div class="text-sm text-gray-700 dark:text-gray-300">
-          Showing {{ (currentPage - 1) * itemsPerPage + 1 }} to {{ Math.min(currentPage * itemsPerPage, filteredData.length) }} of {{ filteredData.length }} results
+        <div class="flex items-center space-x-4">
+          <div class="text-sm text-gray-700 dark:text-gray-300">
+            Showing {{ (currentPage - 1) * itemsPerPage + 1 }} to {{ getEndIndex() }} of {{ filteredData.length }} results
+          </div>
+          
+          <!-- Records per page selector -->
+          <div *ngIf="showRecordsPerPage" class="flex items-center space-x-2">
+            <label class="text-sm text-gray-700 dark:text-gray-300">Show:</label>
+            <select 
+              class="px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+              [value]="itemsPerPage"
+              (change)="onRecordsPerPageChange($event)">
+              <option *ngFor="let option of recordsPerPageOptions" [value]="option.value">{{ option.label }}</option>
+            </select>
+            <span class="text-sm text-gray-700 dark:text-gray-300">per page</span>
+          </div>
         </div>
-        <div class="flex items-center space-x-2">
+        
+        <div *ngIf="totalPages > 1" class="flex items-center space-x-2">
           <app-button
             *ngIf="currentPage > 1"
             (click)="goToPage(currentPage - 1)"
@@ -153,9 +168,17 @@ export class ClientGridComponent implements OnInit, OnChanges {
   @Input() searchTerm: string = '';
   @Input() searchFields: string[] = [];
   @Input() sortable: boolean = true;
+  @Input() showRecordsPerPage: boolean = true;
+  @Input() recordsPerPageOptions: {label: string, value: number}[] = [
+    { label: '10', value: 10 },
+    { label: '20', value: 20 },
+    { label: '50', value: 50 },
+    { label: '100', value: 100 }
+  ];
 
   @Output() pageChange = new EventEmitter<number>();
   @Output() sortChange = new EventEmitter<{column: string, direction: 'asc' | 'desc'}>();
+  @Output() recordsPerPageChange = new EventEmitter<number>();
 
   filteredData: any[] = [];
   paginatedData: any[] = [];
@@ -164,8 +187,10 @@ export class ClientGridComponent implements OnInit, OnChanges {
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';
 
-  // Expose Math to template
-  Math = Math;
+  // Helper method for template
+  getEndIndex(): number {
+    return Math.min(this.currentPage * this.itemsPerPage, this.filteredData.length);
+  }
 
   ngOnInit(): void {
     this.filterAndPaginate();
@@ -243,6 +268,15 @@ export class ClientGridComponent implements OnInit, OnChanges {
       this.updatePagination();
       this.pageChange.emit(page);
     }
+  }
+
+  onRecordsPerPageChange(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    const newItemsPerPage = +target.value;
+    this.itemsPerPage = newItemsPerPage;
+    this.currentPage = 1;
+    this.updatePagination();
+    this.recordsPerPageChange.emit(newItemsPerPage);
   }
 
   getPageNumbers(): number[] {

@@ -39,6 +39,7 @@ export interface AttendanceFilters {
   end_date?: string;
   department_id?: number;
   per_page?: number;
+  page?: number;
 }
 
 @Injectable({

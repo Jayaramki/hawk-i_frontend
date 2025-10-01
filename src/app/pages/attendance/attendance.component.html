@@ -5,6 +5,7 @@
       <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Attendance Management</h1>
       <p class="text-gray-600 dark:text-gray-400">Manage and track employee attendance records</p>
     </div>
+    
 
     <!-- Filters Section -->
     <div class="mb-6">
@@ -12,37 +13,33 @@
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Employee</label>
-            <select 
-              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-              [(ngModel)]="selectedEmployee"
-              (change)="onFilterChange()"
-            >
-              <option value="">Select Employee</option>
-              @for (emp of employees(); track emp.value) {
-                <option [value]="emp.value">{{ emp.label }}</option>
-              }
-            </select>
+            <app-search-dropdown
+              [options]="employees()"
+              placeholder="Search employees..."
+              [clearable]="true"
+              [minSearchLength]="0"
+              [debounceTime]="300"
+              (selectionChange)="onEmployeeChange($event)">
+            </app-search-dropdown>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Department</label>
-            <select 
-              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-              [(ngModel)]="selectedDepartment"
-              (change)="onFilterChange()"
-            >
-              <option value="">Select Department</option>
-              @for (dept of departments(); track dept.value) {
-                <option [value]="dept.value">{{ dept.label }}</option>
-              }
-            </select>
+            <app-search-dropdown
+              [options]="departments()"
+              placeholder="Search departments..."
+              [clearable]="true"
+              [minSearchLength]="0"
+              [debounceTime]="300"
+              (selectionChange)="onDepartmentChange($event)">
+            </app-search-dropdown>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Start Date</label>
             <input 
               type="date"
               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-              [(ngModel)]="startDate"
-              (change)="onFilterChange()"
+              [value]="startDate() ? startDate()!.toISOString().split('T')[0] : ''"
+              (change)="onStartDateChange($event)"
             />
           </div>
           <div>
@@ -50,8 +47,8 @@
             <input 
               type="date"
               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-              [(ngModel)]="endDate"
-              (change)="onFilterChange()"
+              [value]="endDate() ? endDate()!.toISOString().split('T')[0] : ''"
+              (change)="onEndDateChange($event)"
             />
           </div>
         </div>
@@ -74,6 +71,21 @@
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Attendance Records</h3>
           <div class="flex items-center space-x-3">
             <span class="text-sm text-gray-500 dark:text-gray-400">{{ totalRecords() }} records</span>
+            
+            <!-- Records per page selector -->
+            <div class="flex items-center space-x-2">
+              <label class="text-sm text-gray-700 dark:text-gray-300">Show:</label>
+              <select 
+                class="px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                [value]="rows()"
+                (change)="onRecordsPerPageChange($event)">
+                @for (option of recordsPerPageOptions; track option.value) {
+                  <option [value]="option.value">{{ option.label }}</option>
+                }
+              </select>
+              <span class="text-sm text-gray-700 dark:text-gray-300">per page</span>
+            </div>
+            
             <app-button
               (click)="showImportDialog()"
               variant="primary"
@@ -84,24 +96,8 @@
           </div>
         </div>
 
-        <!-- Simple Data Display -->
-        @if (loading()) {
-          <div class="text-center py-8">
-            <i class="fas fa-spinner fa-spin text-2xl text-blue-500 mb-2"></i>
-            <p class="text-gray-600 dark:text-gray-400">Loading attendance records...</p>
-          </div>
-        }
-
-        @if (!loading() && attendanceRecords().length === 0) {
-          <div class="text-center py-8">
-            <i class="fas fa-inbox text-4xl text-gray-400 mb-4"></i>
-            <h5 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No attendance records found</h5>
-            <p class="text-gray-600 dark:text-gray-400">Try adjusting your filters or import some data</p>
-          </div>
-        }
-
-        @if (!loading() && attendanceRecords().length > 0) {
-          <div class="overflow-x-auto">
+        <!-- Server-side Grid with Custom Pagination -->
+        <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead class="bg-gray-50 dark:bg-gray-800">
               <tr>
@@ -115,52 +111,114 @@
               </tr>
             </thead>
             <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+              <!-- Loading State -->
+              @if (loading()) {
+                <tr class="animate-pulse">
+                  <td colspan="7" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-spinner fa-spin mr-2"></i>
+                    Loading attendance records...
+                  </td>
+                </tr>
+              }
+
+              <!-- Empty State -->
+              @if (!loading() && attendanceRecords().length === 0) {
+                <tr>
+                  <td colspan="7" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-inbox mr-2"></i>
+                    No attendance records found. Try adjusting your filters or import some data.
+                  </td>
+                </tr>
+              }
+
+              <!-- Data Rows -->
               @for (record of attendanceRecords(); track record.id) {
                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="flex items-center">
-                    <div class="flex-shrink-0 h-8 w-8">
-                      <div class="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
-                        <span class="text-sm font-medium text-gray-700">
-                          {{ record.employee_name.charAt(0) }}
-                        </span>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex items-center">
+                      <div class="flex-shrink-0 h-8 w-8">
+                        <div class="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
+                          <span class="text-sm font-medium text-gray-700">
+                            {{ record.employee_name.charAt(0) || '?' }}
+                          </span>
+                        </div>
+                      </div>
+                      <div class="ml-3">
+                        <div class="text-sm font-medium text-gray-900 dark:text-white">
+                          {{ record.employee_name || 'Unknown Employee' }}
+                        </div>
                       </div>
                     </div>
-                    <div class="ml-3">
-                      <div class="text-sm font-medium text-gray-900 dark:text-white">
-                        {{ record.employee_name }}
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                    {{ record.department }}
-                  </span>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                  {{ formatDate(record.attendance_date) }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900 dark:text-white">
-                  {{ formatTime(record.in_time) }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900 dark:text-white">
-                  {{ formatTime(record.out_time) }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  {{ record.working_hours ? record.working_hours.toFixed(1) + 'h' : '-' }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <span 
-                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                    [ngClass]="getStatusClass(record)">
-                    {{ getStatusText(record) }}
-                  </span>
-                </td>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                      {{ record.department }}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    {{ formatDate(record.attendance_date) }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900 dark:text-white">
+                    {{ formatTime(record.in_time) }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900 dark:text-white">
+                    {{ formatTime(record.out_time) }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                    {{ record.working_hours ? record.working_hours.toFixed(1) + 'h' : '-' }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span 
+                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                      [ngClass]="getStatusClass(record)">
+                      {{ getStatusText(record) }}
+                    </span>
+                  </td>
                 </tr>
               }
             </tbody>
           </table>
+        </div>
+
+        <!-- Server-side Pagination -->
+        @if (totalRecords() > rows()) {
+          <div class="px-6 py-3 border-t border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between">
+              <div class="text-sm text-gray-700 dark:text-gray-300">
+                Showing {{ (currentPage() - 1) * rows() + 1 }} to {{ getEndIndex() }} of {{ totalRecords() }} results
+              </div>
+              <div class="flex items-center space-x-2">
+                <app-button
+                  *ngIf="currentPage() > 1"
+                  (click)="onPageChange(currentPage() - 1)"
+                  variant="secondary"
+                  size="sm">
+                  Previous
+                </app-button>
+                
+                <!-- Page numbers -->
+                <div class="flex space-x-1">
+                  @for (page of getServerPageNumbers(); track page) {
+                    <button
+                      (click)="onPageChange(page)"
+                      class="px-3 py-1 text-sm rounded"
+                      [class]="page === currentPage() 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'">
+                      {{ page }}
+                    </button>
+                  }
+                </div>
+                
+                <app-button
+                  *ngIf="currentPage() < getTotalPages()"
+                  (click)="onPageChange(currentPage() + 1)"
+                  variant="secondary"
+                  size="sm">
+                  Next
+                </app-button>
+              </div>
+            </div>
           </div>
         }
       </app-card>

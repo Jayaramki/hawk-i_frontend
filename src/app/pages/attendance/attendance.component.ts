@@ -2,13 +2,12 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { MessageService } from 'primeng/api';
 
 // Design System Components
 import { CardComponent } from '../../shared/components/card/card.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
-import { GridColumn } from '../../shared/components/client-grid/client-grid.component';
+import { SearchDropdownComponent, SearchDropdownOption } from '../../shared/components/search-dropdown/search-dropdown.component';
 
 import { AttendanceService, AttendanceRecord, AttendanceFilters } from '../../shared/services/attendance.service';
 import { BambooHRService } from '../../shared/services/bamboohr.service';
@@ -22,28 +21,41 @@ import { BambooHRService } from '../../shared/services/bamboohr.service';
     RouterModule,
     CardComponent,
     ButtonComponent,
-    LayoutComponent
+    LayoutComponent,
+    SearchDropdownComponent
   ],
+  // providers: [MessageService],
   templateUrl: './attendance.component.html',
   styleUrls: ['./attendance.component.scss']
 })
 export class AttendanceComponent implements OnInit {
   // Signals
   attendanceRecords = signal<AttendanceRecord[]>([]);
-  employees = signal<any[]>([]);
-  departments = signal<any[]>([]);
+  employees = signal<SearchDropdownOption[]>([]);
+  departments = signal<SearchDropdownOption[]>([]);
   loading = signal(false);
   totalRecords = signal(0);
   
   // Filter signals
-  selectedEmployee = signal<any>(null);
-  selectedDepartment = signal<any>(null);
+  selectedEmployee = signal<SearchDropdownOption | null>(null);
+  selectedDepartment = signal<SearchDropdownOption | null>(null);
   startDate = signal<Date | null>(null);
   endDate = signal<Date | null>(null);
 
   // Pagination
   first = signal(0);
   rows = signal(15);
+  currentPage = signal(1);
+  
+  // Records per page options
+  recordsPerPageOptions = [
+    { label: '15', value: 15 },
+    { label: '10', value: 10 },
+    { label: '20', value: 20 },
+    { label: '25', value: 25 },
+    { label: '50', value: 50 },
+    { label: '100', value: 100 }
+  ];
 
   // Import Modal
   showImportModal = signal(false);
@@ -51,24 +63,14 @@ export class AttendanceComponent implements OnInit {
   isUploading = signal(false);
   importResult = signal<any>(null);
 
-  // Grid configuration
-  columns: GridColumn[] = [
-    { key: 'employee_name', title: 'Employee', sortable: true },
-    { key: 'department', title: 'Department', sortable: true },
-    { key: 'attendance_date', title: 'Date', sortable: true },
-    { key: 'in_time', title: 'Check In', sortable: false },
-    { key: 'out_time', title: 'Check Out', sortable: false },
-    { key: 'working_hours', title: 'Hours', sortable: true },
-    { key: 'status', title: 'Status', sortable: false }
-  ];
+  // Grid configuration removed for now
 
   // Document reference for template
   document = document;
 
   constructor(
     private readonly attendanceService: AttendanceService,
-    private readonly bamboohrService: BambooHRService,
-    private readonly messageService: MessageService
+    private readonly bamboohrService: BambooHRService
   ) { }
 
   ngOnInit(): void {
@@ -87,18 +89,14 @@ export class AttendanceComponent implements OnInit {
             this.employees.set(employeesData.map((emp: any) => ({
               label: emp.full_name || `${emp.first_name} ${emp.last_name}`,
               value: emp.id,
-              bamboohr_id: emp.bamboohr_id
+              searchText: `${emp.full_name || `${emp.first_name} ${emp.last_name}`} ${emp.email || ''}`.trim()
             })));
           }
         }
       },
       error: (error) => {
         console.error('Error loading employees:', error);
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: 'Failed to load employees'
-        });
+        console.error('Failed to load employees');
       }
     });
   }
@@ -112,18 +110,15 @@ export class AttendanceComponent implements OnInit {
           if (Array.isArray(departmentsData)) {
             this.departments.set(departmentsData.map((dept: any) => ({
               label: dept.name,
-              value: dept.id
+              value: dept.id,
+              searchText: dept.name
             })));
           }
         }
       },
       error: (error) => {
         console.error('Error loading departments:', error);
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: 'Failed to load departments'
-        });
+        console.error('Failed to load departments');
       }
     });
   }
@@ -131,21 +126,36 @@ export class AttendanceComponent implements OnInit {
   loadAttendanceRecords(): void {
     this.loading.set(true);
     
+    console.log('Loading attendance with per_page:', this.rows());
+    
     const filters: AttendanceFilters = {
-      per_page: this.rows()
+      per_page: this.rows(),
+      page: this.currentPage()
     };
 
     if (this.selectedEmployee()) {
-      filters.employee_id = this.selectedEmployee().value;
+      const employee = this.selectedEmployee();
+      if (employee) {
+        filters.employee_id = employee.value;
+      }
     }
     if (this.selectedDepartment()) {
-      filters.department_id = this.selectedDepartment().value;
+      const department = this.selectedDepartment();
+      if (department) {
+        filters.department_id = department.value;
+      }
     }
     if (this.startDate()) {
-      filters.start_date = this.startDate()!.toISOString().split('T')[0];
+      const startDate = this.startDate();
+      if (startDate) {
+        filters.start_date = startDate.toISOString().split('T')[0];
+      }
     }
     if (this.endDate()) {
-      filters.end_date = this.endDate()!.toISOString().split('T')[0];
+      const endDate = this.endDate();
+      if (endDate) {
+        filters.end_date = endDate.toISOString().split('T')[0];
+      }
     }
 
     this.attendanceService.getAttendance(filters).subscribe({
@@ -157,33 +167,67 @@ export class AttendanceComponent implements OnInit {
           this.attendanceRecords.set(attendanceData);
           this.totalRecords.set(response.data.total || attendanceData.length);
         } else {
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: 'Failed to load attendance records'
-          });
+          console.error('Failed to load attendance records');
         }
       },
       error: (error) => {
         this.loading.set(false);
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: 'Failed to load attendance records'
-        });
+        console.error('Failed to load attendance records');
         console.error('Error loading attendance:', error);
       }
     });
   }
 
+  onEmployeeChange(employee: SearchDropdownOption | null): void {
+    this.selectedEmployee.set(employee);
+    this.onFilterChange();
+  }
+
+  onDepartmentChange(department: SearchDropdownOption | null): void {
+    this.selectedDepartment.set(department);
+    this.onFilterChange();
+  }
+
+  onStartDateChange(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    const dateValue = target.value;
+    if (dateValue) {
+      this.startDate.set(new Date(dateValue));
+    } else {
+      this.startDate.set(null);
+    }
+    this.onFilterChange();
+  }
+
+  onEndDateChange(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    const dateValue = target.value;
+    if (dateValue) {
+      this.endDate.set(new Date(dateValue));
+    } else {
+      this.endDate.set(null);
+    }
+    this.onFilterChange();
+  }
+
   onFilterChange(): void {
+    this.currentPage.set(1);
     this.first.set(0);
     this.loadAttendanceRecords();
   }
 
-  onPageChange(event: any): void {
-    this.first.set(event.first);
-    this.rows.set(event.rows);
+  onPageChange(page: number): void {
+    this.currentPage.set(page);
+    this.first.set((page - 1) * this.rows());
+    this.loadAttendanceRecords();
+  }
+
+  onRecordsPerPageChange(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    const newRows = parseInt(target.value, 10);
+    this.rows.set(newRows);
+    this.currentPage.set(1);
+    this.first.set(0);
     this.loadAttendanceRecords();
   }
 
@@ -214,11 +258,7 @@ export class AttendanceComponent implements OnInit {
       if (validation.valid) {
         this.selectedFile.set(file);
       } else {
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Invalid File',
-          detail: validation.message
-        });
+        console.error('Invalid File:', validation.message);
         event.target.value = '';
       }
     }
@@ -226,11 +266,7 @@ export class AttendanceComponent implements OnInit {
 
   onUpload(): void {
     if (!this.selectedFile()) {
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'No File Selected',
-        detail: 'Please select a file to upload'
-      });
+      console.warn('No File Selected - Please select a file to upload');
       return;
     }
 
@@ -248,34 +284,18 @@ export class AttendanceComponent implements OnInit {
           
           if (hasErrors && hasProcessedRecords) {
             // Partial success - some records processed, some had errors
-            this.messageService.add({
-              severity: 'warn',
-              summary: 'Import Partially Successful',
-              detail: `Processed ${response.data?.processed_count ?? 0} records, ${response.data?.error_count ?? 0} errors occurred`
-            });
+            console.warn(`Import Partially Successful - Processed ${response.data?.processed_count ?? 0} records, ${response.data?.error_count ?? 0} errors occurred`);
           } else if (hasErrors && !hasProcessedRecords) {
             // All records had errors
-            this.messageService.add({
-              severity: 'error',
-              summary: 'Import Failed',
-              detail: response.message || 'All records failed validation'
-            });
+            console.error('Import Failed:', response.message || 'All records failed validation');
           } else {
             // Complete success
-            this.messageService.add({
-              severity: 'success',
-              summary: 'Import Successful',
-              detail: `Processed ${response.data?.processed_count ?? 0} records successfully`
-            });
+            console.log(`Import Successful - Processed ${response.data?.processed_count ?? 0} records successfully`);
           }
           
           this.loadAttendanceRecords(); // Refresh the data
         } else {
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Import Failed',
-            detail: response.message
-          });
+          console.error('Import Failed:', response.message);
         }
       },
       error: (error) => {
@@ -319,11 +339,7 @@ export class AttendanceComponent implements OnInit {
           }
         });
         
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Upload Failed',
-          detail: errorMessage
-        });
+        console.error('Upload Failed:', errorMessage);
         console.error('Upload error:', error);
       }
     });
@@ -364,4 +380,29 @@ export class AttendanceComponent implements OnInit {
       day: 'numeric'
     });
   }
+
+  getEndIndex(): number {
+    return Math.min(this.currentPage() * this.rows(), this.totalRecords());
+  }
+
+  getTotalPages(): number {
+    return Math.ceil(this.totalRecords() / this.rows());
+  }
+
+  getServerPageNumbers(): number[] {
+    const totalPages = this.getTotalPages();
+    const currentPage = this.currentPage();
+    const pages: number[] = [];
+    
+    // Show up to 5 page numbers
+    const startPage = Math.max(1, currentPage - 2);
+    const endPage = Math.min(totalPages, startPage + 4);
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    
+    return pages;
+  }
+
 }

@@ -1,0 +1,63 @@
+// Timeoff Requests Component Styles
+.timeoff-requests {
+  .filter-section {
+    .filter-grid {
+      @apply grid grid-cols-1 md:grid-cols-4 gap-4;
+    }
+  }
+
+  .summary-cards {
+    @apply grid grid-cols-1 md:grid-cols-3 gap-6;
+  }
+
+  .status-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+    
+    &.pending {
+      @apply bg-yellow-100 text-yellow-800;
+    }
+    
+    &.approved {
+      @apply bg-green-100 text-green-800;
+    }
+    
+    &.rejected {
+      @apply bg-red-100 text-red-800;
+    }
+  }
+
+  .action-buttons {
+    @apply flex space-x-2;
+    
+    .btn-view {
+      @apply text-blue-600 hover:text-blue-900;
+    }
+    
+    .btn-approve {
+      @apply text-green-600 hover:text-green-900;
+    }
+    
+    .btn-reject {
+      @apply text-red-600 hover:text-red-900;
+    }
+  }
+}
+
+// Dark mode adjustments
+.dark {
+  .timeoff-requests {
+    .status-badge {
+      &.pending {
+        @apply bg-yellow-900 text-yellow-200;
+      }
+      
+      &.approved {
+        @apply bg-green-900 text-green-200;
+      }
+      
+      &.rejected {
+        @apply bg-red-900 text-red-200;
+      }
+    }
+  }
+}

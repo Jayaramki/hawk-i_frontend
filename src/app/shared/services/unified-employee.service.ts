@@ -310,6 +310,14 @@ export class UnifiedEmployeeService {
   }
 
   /**
+   * Refresh mappings data
+   */
+  refreshMappings(): void {
+    // Clear current mappings - they will be reloaded when loadAllEmployees is called
+    this.mappingsSignal.set([]);
+  }
+
+  /**
    * Remove employee mapping
    */
   removeMapping(inatechId: string): Observable<any> {
