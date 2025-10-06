@@ -46,6 +46,7 @@ export interface Employee {
   last_name: string;
   email: string;
   job_title: string;
+  mapping_status: string;
   department_id: number;
   hire_date: string;
   termination_date: string | null;

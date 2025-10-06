@@ -15,6 +15,7 @@ export interface GridAction {
   icon?: string;
   class?: string;
   action: (item: any) => void;
+  condition?: (item: any) => boolean; // Optional condition function
 }
 
 @Component({

@@ -1,6 +1,6 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
+import { Observable } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
@@ -9,6 +9,7 @@ export interface InatechEmployee {
   ina_emp_id: string;
   employee_name: string;
   status: 'active' | 'inactive';
+  mapping_status: 'mapped' | 'unmapped';
   created_at: string;
   updated_at: string;
 }
@@ -280,6 +281,59 @@ export class InatechEmployeeService {
    */
   clearError(): void {
     this.errorSignal.set(null);
+  }
+
+  /**
+   * Get bulk mapping data for the interface
+   */
+  getBulkMappingData(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/bulk-mapping/data`).pipe(
+      map(response => response),
+      catchError(error => {
+        console.error('Error fetching bulk mapping data:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Get bulk mapping suggestions
+   */
+  getBulkMappingSuggestions(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/bulk-mapping/suggestions`).pipe(
+      map(response => response),
+      catchError(error => {
+        console.error('Error fetching bulk mapping suggestions:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Get all employee mappings
+   */
+  getAllMappings(search?: string): Observable<any> {
+    const params = search ? { search } : undefined;
+    return this.http.get<any>(`${this.apiUrl}/mappings`, { params }).pipe(
+      map(response => response),
+      catchError(error => {
+        console.error('Error fetching mappings:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Create bulk employee mappings
+   */
+  createBulkMappings(mappings: { inatech_id: number, bamboohr_id: number }[]): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/bulk-mapping/create`, { mappings }).pipe(
+      map(response => response),
+      catchError(error => {
+        console.error('Error creating bulk mappings:', error);
+        throw error;
+      })
+    );
   }
 
   /**

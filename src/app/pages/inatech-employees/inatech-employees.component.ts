@@ -24,6 +24,7 @@ export class InatechEmployeesComponent implements OnInit, OnDestroy {
 
   // Component state
   employees: InatechEmployee[] = [];
+  totalItems = 0;
   loading = false;
   error: string | null = null;
   searchTerm = '';
@@ -64,7 +65,15 @@ export class InatechEmployeesComponent implements OnInit, OnDestroy {
       label: 'Map',
       icon: 'fas fa-link',
       class: 'text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300',
-      action: (employee: any) => this.openMappingModal(employee)
+      action: (employee: any) => this.openMappingModal(employee),
+      condition: (employee: any) => !employee.is_mapped // Only show if not mapped
+    },
+    {
+      label: 'Unmap',
+      icon: 'fas fa-unlink',
+      class: 'text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300',
+      action: (employee: any) => this.removeMapping(employee),
+      condition: (employee: any) => employee.is_mapped // Only show if mapped
     },
     {
       label: 'Delete',
@@ -87,7 +96,6 @@ export class InatechEmployeesComponent implements OnInit, OnDestroy {
       )
       .subscribe(searchTerm => {
         this.searchTerm = searchTerm;
-        this.currentPage = 1;
         this.loadEmployees();
       });
   }
@@ -112,7 +120,7 @@ export class InatechEmployeesComponent implements OnInit, OnDestroy {
     
     return filteredEmployees.map(employee => ({
       ...employee,
-      mappingStatus: 'Unmapped' // This would be determined by checking mappings
+      mappingStatus: employee.mapping_status || 'Unmapped'
     }));
   }
 
@@ -130,6 +138,7 @@ export class InatechEmployeesComponent implements OnInit, OnDestroy {
           this.loading = false;
           if (response.success) {
             this.employees = response.data.data;
+            this.totalItems = response.data.total;
           }
         },
         error: (error) => {

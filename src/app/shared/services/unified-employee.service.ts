@@ -145,9 +145,10 @@ export class UnifiedEmployeeService {
 
     return combineLatest([
       this.bambooHRService.getAllEmployees({}),
-      this.inatechEmployeeService.getEmployees()
+      this.inatechEmployeeService.getEmployees(),
+      this.loadMappings()
     ]).pipe(
-      map(([bambooResponse, inatechResponse]) => {
+      map(([bambooResponse, inatechResponse, mappingsResponse]) => {
         this.loadingSignal.set(false);
         
         const bambooEmployees = bambooResponse.success ? bambooResponse.data.data || [] : [];
@@ -301,12 +302,20 @@ export class UnifiedEmployeeService {
    * Load all mappings
    */
   loadMappings(): Observable<any> {
-    // This would typically call an API to get all mappings
-    // For now, we'll return an empty array since mappings are loaded with employees
-    return new Observable(observer => {
-      observer.next({ success: true, data: [] });
-      observer.complete();
-    });
+    return this.inatechEmployeeService.getAllMappings().pipe(
+      map(response => {
+        if (response.success) {
+          this.mappingsSignal.set(response.data.data);
+          return response;
+        }
+        throw new Error(response.message || 'Failed to load mappings');
+      }),
+      catchError(error => {
+        console.error('Error loading mappings:', error);
+        this.errorSignal.set('Failed to load mappings');
+        throw error;
+      })
+    );
   }
 
   /**
@@ -322,6 +331,27 @@ export class UnifiedEmployeeService {
    */
   removeMapping(inatechId: string): Observable<any> {
     return this.inatechEmployeeService.removeMapping(parseInt(inatechId));
+  }
+
+  /**
+   * Get bulk mapping data for the interface
+   */
+  getBulkMappingData(): Observable<any> {
+    return this.inatechEmployeeService.getBulkMappingData();
+  }
+
+  /**
+   * Get bulk mapping suggestions
+   */
+  getBulkMappingSuggestions(): Observable<any> {
+    return this.inatechEmployeeService.getBulkMappingSuggestions();
+  }
+
+  /**
+   * Create bulk employee mappings
+   */
+  createBulkMappings(mappings: { inatech_id: number, bamboohr_id: number }[]): Observable<any> {
+    return this.inatechEmployeeService.createBulkMappings(mappings);
   }
 
   /**
