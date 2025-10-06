@@ -85,8 +85,7 @@ export class TimeoffRequestsComponent implements OnInit {
     { key: 'end_date', title: 'End Date', sortable: true },
     { key: 'days_requested', title: 'Days', sortable: true },
     { key: 'status', title: 'Status', sortable: true },
-    { key: 'requested_date', title: 'Requested', sortable: true },
-    { key: 'approved_by', title: 'Approved By', sortable: true }
+    { key: 'requested_date', title: 'Requested', sortable: true }
   ];
 
   // Grid actions - Read-only view since BambooHR handles approvals

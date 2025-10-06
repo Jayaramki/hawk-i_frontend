@@ -65,3 +65,22 @@ body {
 }
 
 // Additional global styles can be added here
+
+// Prevent horizontal scroll on layout
+html, body {
+  overflow-x: hidden;
+}
+
+// Ensure proper flex behavior for layout
+.app-layout {
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+// Sidebar responsive behavior
+@media (max-width: 1024px) {
+  .sidebar-mobile {
+    position: fixed;
+    z-index: 50;
+  }
+}

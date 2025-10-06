@@ -141,7 +141,7 @@ export class SidebarComponent implements OnInit {
 
   openSections: Set<string> = new Set();
 
-  constructor(private router: Router) {}
+  constructor(private readonly router: Router) {}
 
   ngOnInit(): void {
     // Listen to route changes and auto-expand sections
@@ -173,7 +173,7 @@ export class SidebarComponent implements OnInit {
   }
 
   get sidebarClasses(): string {
-    const baseClasses = 'bg-white dark:bg-gray-800 shadow-soft flex flex-col transition-all duration-300 ease-in-out';
+    const baseClasses = 'bg-white dark:bg-gray-800 shadow-soft flex flex-col transition-all duration-300 ease-in-out flex-shrink-0';
     const widthClass = this.isOpen ? this.width : 'w-16';
     const mobileClasses = this.showToggle ? 'fixed inset-y-0 left-0 z-50 lg:relative lg:translate-x-0' : '';
     const transformClass = !this.isOpen && this.showToggle ? '-translate-x-full lg:translate-x-0' : '';

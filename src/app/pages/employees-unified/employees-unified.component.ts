@@ -346,6 +346,7 @@ interface SelectedMapping {
           [isOpen]="showBulkMappingModal"
           [title]="'Bulk Employee Mapping'"
           [size]="'xl'"
+          [showFooter]="true"
           (closeEvent)="closeBulkMappingModal()">
           <div class="space-y-6">
             <!-- Instructions -->
@@ -647,24 +648,24 @@ interface SelectedMapping {
             </div>
           </div>
 
-          <div class="flex justify-between items-center mt-6" modal-footer>
-            <div class="text-sm text-gray-500 dark:text-gray-400">
+          <div class="flex justify-between items-center w-full" modal-footer>
+            <div class="text-sm text-gray-500 dark:text-gray-400 flex-shrink-0 mr-4">
               {{ selectedMappings.length }} mappings ready to create
             </div>
-            <div class="flex space-x-3">
-            <app-button
-              [variant]="'secondary'"
-              (click)="closeBulkMappingModal()">
-              Cancel
-            </app-button>
-            <app-button
-              [variant]="'primary'"
+            <div class="flex space-x-3 flex-shrink-0">
+              <app-button
+                [variant]="'secondary'"
+                (click)="closeBulkMappingModal()">
+                Cancel
+              </app-button>
+              <app-button
+                [variant]="'primary'"
                 (click)="createBulkMappings()"
                 [disabled]="selectedMappings.length === 0"
                 [loading]="creatingBulkMappings">
-              <i class="fas fa-link mr-2"></i>
+                <i class="fas fa-link mr-2"></i>
                 Create {{ selectedMappings.length }} Mappings
-            </app-button>
+              </app-button>
             </div>
           </div>
         </app-modal>
@@ -1045,18 +1046,30 @@ export class EmployeesUnifiedComponent implements OnInit, OnDestroy {
   }
 
   loadBulkMappingData(): void {
-    this.unifiedEmployeeService.getBulkMappingData()
+    // First ensure mappings are loaded, then load bulk mapping data
+    this.unifiedEmployeeService.loadMappings()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (response) => {
-          if (response.success) {
-            this.bulkMappingBambooHREmployees = response.data.bamboohr_employees;
-            this.bulkMappingInatechEmployees = response.data.inatech_employees;
-            this.loadBulkMappingSuggestions();
-          }
+        next: (mappingsResponse) => {
+          console.log('Mappings loaded for bulk mapping:', mappingsResponse);
+          // Now load bulk mapping data
+          this.unifiedEmployeeService.getBulkMappingData()
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+              next: (response) => {
+                if (response.success) {
+                  this.bulkMappingBambooHREmployees = response.data.bamboohr_employees;
+                  this.bulkMappingInatechEmployees = response.data.inatech_employees;
+                  this.loadBulkMappingSuggestions();
+                }
+              },
+              error: (error) => {
+                console.error('Error loading bulk mapping data:', error);
+              }
+            });
         },
         error: (error) => {
-          console.error('Error loading bulk mapping data:', error);
+          console.error('Error loading mappings for bulk mapping:', error);
         }
       });
   }
@@ -1097,7 +1110,10 @@ export class EmployeesUnifiedComponent implements OnInit, OnDestroy {
   }
 
   selectSuggestionMatch(suggestion: BulkMappingSuggestion, match: BulkMappingMatch): void {
-    // Check if this BambooHR employee is already mapped to another Inatech employee
+    console.log('Checking mapping for:', match.bamboohr_employee.name, 'ID:', match.bamboohr_employee.id);
+    console.log('Current mappings:', this.unifiedEmployeeService.mappings());
+    
+    // Check if this BambooHR employee is already mapped in the current session
     const existingBambooMapping = this.selectedMappings.find(m => 
       m.bamboohr_employee.id === match.bamboohr_employee.id && 
       m.inatech_employee.id !== suggestion.inatech_employee.id
@@ -1107,6 +1123,20 @@ export class EmployeesUnifiedComponent implements OnInit, OnDestroy {
       this.showError(
         'Mapping Conflict',
         `BambooHR employee "${match.bamboohr_employee.name}" is already mapped to "${existingBambooMapping.inatech_employee.name}". Only one-to-one mappings are allowed.`
+      );
+      return;
+    }
+    
+    // Check if this BambooHR employee is already mapped in the database
+    const existingDatabaseMapping = this.unifiedEmployeeService.mappings().find(m => 
+      (m.bamboohrEmployee as any)?.id === match.bamboohr_employee.id
+    );
+    
+    if (existingDatabaseMapping) {
+      console.log('Found existing database mapping:', existingDatabaseMapping);
+      this.showError(
+        'Mapping Conflict',
+        `BambooHR employee "${match.bamboohr_employee.name}" is already mapped to "${(existingDatabaseMapping.inatechEmployee as any)?.name}". Only one-to-one mappings are allowed.`
       );
       return;
     }
@@ -1275,8 +1305,18 @@ export class EmployeesUnifiedComponent implements OnInit, OnDestroy {
   }
 
   isBambooHREmployeeAlreadyMapped(bamboohrId: number): boolean {
-    return this.selectedMappings.some(mapping => 
+    // Check if already selected in current bulk mapping session
+    const isSelected = this.selectedMappings.some(mapping => 
       mapping.bamboohr_employee.id === bamboohrId
+    );
+    
+    if (isSelected) {
+      return true;
+    }
+    
+    // Check if already mapped in database
+    return this.unifiedEmployeeService.mappings().some(mapping => 
+      (mapping.bamboohrEmployee as any)?.id === bamboohrId
     );
   }
 
@@ -1294,6 +1334,10 @@ export class EmployeesUnifiedComponent implements OnInit, OnDestroy {
 
   mapAllHighConfidenceSuggestions(): void {
     let mappedCount = 0;
+    let skippedCount = 0;
+    
+    console.log('Starting mapAllHighConfidenceSuggestions');
+    console.log('Current mappings in database:', this.unifiedEmployeeService.mappings());
     
     this.bulkMappingSuggestions.forEach((suggestion: BulkMappingSuggestion) => {
       // Find the highest confidence suggestion for this Inatech employee
@@ -1301,15 +1345,28 @@ export class EmployeesUnifiedComponent implements OnInit, OnDestroy {
         .filter((match: BulkMappingMatch) => match.confidence >= 80) // Only high confidence matches
         .sort((a: BulkMappingMatch, b: BulkMappingMatch) => b.confidence - a.confidence)[0];
       
-      if (bestMatch && !this.isSuggestionMatchSelected(suggestion, bestMatch)) {
+      if (bestMatch) {
+        console.log(`Processing suggestion for ${suggestion.inatech_employee.name} -> ${bestMatch.bamboohr_employee.name}`);
+        
+        // Check if already selected in current session
+        if (this.isSuggestionMatchSelected(suggestion, bestMatch)) {
+          console.log('Already selected in current session, skipping');
+          return;
+        }
+        
+        // Check if BambooHR employee is already mapped in database
+        if (this.isBambooHREmployeeAlreadyMapped(bestMatch.bamboohr_employee.id)) {
+          console.log(`BambooHR employee ${bestMatch.bamboohr_employee.name} is already mapped, skipping`);
+          skippedCount++;
+          return;
+        }
+        
         this.selectSuggestionMatch(suggestion, bestMatch);
         mappedCount++;
       }
     });
     
-    if (mappedCount > 0) {
-      console.log(`Auto-mapped ${mappedCount} high-confidence suggestions`);
-    }
+    console.log(`Auto-mapped ${mappedCount} high-confidence suggestions, skipped ${skippedCount} already mapped`);
   }
 
   closeMappingModal(): void {
