@@ -299,7 +299,24 @@ export class AttendanceDayViewComponent {
 
   formatTime(timeString: string | null): string {
     if (!timeString) return '-';
-    return new Date(timeString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    // Handle time-only strings (HH:MM:SS format)
+    if (timeString.match(/^\d{2}:\d{2}:\d{2}$/)) {
+      return timeString.substring(0, 5); // Return HH:MM format
+    }
+    
+    // Handle datetime strings - display in IST timezone
+    const date = new Date(timeString);
+    if (isNaN(date.getTime())) {
+      return timeString; // Return as-is if parsing fails
+    }
+    
+    // Format time in IST (UTC+5:30)
+    return date.toLocaleTimeString('en-IN', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      timeZone: 'Asia/Kolkata'
+    });
   }
 
   formatWorkingHours(hours: number | null): string {

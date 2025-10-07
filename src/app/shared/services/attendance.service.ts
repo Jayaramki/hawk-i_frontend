@@ -77,6 +77,18 @@ export class AttendanceService {
   }
 
   /**
+   * Download attendance template
+   */
+  downloadTemplate(): void {
+    const link = document.createElement('a');
+    link.href = `${this.apiUrl}/template`;
+    link.download = 'attendance_template.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  /**
    * Validate file before upload
    */
   validateFile(file: File): { valid: boolean; message?: string } {

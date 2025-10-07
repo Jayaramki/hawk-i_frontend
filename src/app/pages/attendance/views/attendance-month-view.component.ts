@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, ElementRef, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -9,6 +9,28 @@ import { SearchDropdownComponent, SearchDropdownOption } from '../../../shared/c
 
 import { AttendanceService, AttendanceRecord, AttendanceFilters } from '../../../shared/services/attendance.service';
 import { BambooHRService } from '../../../shared/services/bamboohr.service';
+
+// Interfaces for month view
+interface MonthDay {
+  date: string;
+  dayNumber: number;
+  dayName: string;
+  isCurrentMonth: boolean;
+  status?: 'present' | 'time_off' | 'no_track';
+  status_label?: string;
+  status_color?: 'success' | 'warning' | 'danger' | 'secondary';
+  in_time?: string | null;
+  out_time?: string | null;
+  working_hours?: number | null;
+  time_off_type_name?: string | null;
+}
+
+interface EmployeeMonthData {
+  employee_id: number;
+  employee_name: string;
+  days: MonthDay[];
+  totalHours: number;
+}
 
 @Component({
   selector: 'app-attendance-month-view',
@@ -67,104 +89,191 @@ import { BambooHRService } from '../../../shared/services/bamboohr.service';
         </div>
       </app-card>
 
-      <!-- Month Summary -->
+      <!-- Month Ledger View -->
       <app-card>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div class="text-center">
-            <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ getMonthSummary().totalEmployees }}</div>
-            <div class="text-sm text-gray-600 dark:text-gray-400">Total Employees</div>
-          </div>
-          <div class="text-center">
-            <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ getMonthSummary().presentDays }}</div>
-            <div class="text-sm text-gray-600 dark:text-gray-400">Present Days</div>
-          </div>
-          <div class="text-center">
-            <div class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{{ getMonthSummary().timeOffDays }}</div>
-            <div class="text-sm text-gray-600 dark:text-gray-400">Time Off Days</div>
-          </div>
-          <div class="text-center">
-            <div class="text-2xl font-bold text-gray-600 dark:text-gray-400">{{ getMonthSummary().noTrackDays }}</div>
-            <div class="text-sm text-gray-600 dark:text-gray-400">No Track Days</div>
-          </div>
-        </div>
-      </app-card>
-
-      <!-- Calendar View -->
-      <app-card>
-        <div class="overflow-x-auto">
-          <div class="min-w-full">
-            <!-- Calendar Header -->
-            <div class="grid grid-cols-8 gap-1 mb-4">
-              <div class="p-2 text-center font-medium text-gray-700 dark:text-gray-300">Employee</div>
-              @for (day of getCalendarDays(); track day.date) {
-                <div class="p-2 text-center text-sm font-medium text-gray-700 dark:text-gray-300">
-                  <div>{{ day.dayNumber }}</div>
-                  <div class="text-xs text-gray-500">{{ day.dayName }}</div>
-                </div>
-              }
+        <div class="ledger-container">
+          <!-- Ledger Header -->
+          <div class="ledger-header">
+            <div class="employee-column-header">
+              <div class="text-sm font-semibold text-gray-700 dark:text-gray-300">Employee</div>
             </div>
-            
-            <!-- Calendar Body -->
-            <div class="space-y-1">
-              @if (loading()) {
-                <div class="flex items-center justify-center py-8">
-                  <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                  <span class="ml-2 text-gray-600 dark:text-gray-400">Loading attendance records...</span>
+            <div class="days-scroll-container" #headerScrollContainer>
+              <div class="days-container">
+                @if (attendanceRecords().length > 0) {
+                  @for (day of attendanceRecords()[0].days; track day.date) {
+                    <div class="day-header">
+                      <div class="text-xs font-semibold text-gray-700 dark:text-gray-300">{{ day.dayName }}</div>
+                      <div class="text-xs text-gray-500">{{ formatDateHeader(day.date) }}</div>
+                    </div>
+                  }
+                } @else {
+                  <!-- Fallback headers when no data -->
+                  @for (day of getMonthDays(); track day.date) {
+                    <div class="day-header">
+                      <div class="text-xs font-semibold text-gray-700 dark:text-gray-300">{{ day.dayName }}</div>
+                      <div class="text-xs text-gray-500">{{ formatDateHeader(day.date) }}</div>
+                    </div>
+                  }
+                }
+                <div class="total-header">
+                  <div class="text-xs font-semibold text-gray-700 dark:text-gray-300">Total</div>
+                  <div class="text-xs text-gray-500">Hours</div>
                 </div>
-              } @else if (attendanceRecords().length === 0) {
-                <div class="text-center py-8 text-gray-500 dark:text-gray-400">
-                  No attendance records found for the selected month.
+              </div>
+            </div>
+          </div>
+
+          <!-- Ledger Body -->
+          <div class="ledger-body">
+            @if (loading()) {
+              <div class="loading-row">
+                <div class="employee-column">
+                  <div class="flex items-center justify-center py-8">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <span class="ml-2 text-gray-600 dark:text-gray-400">Loading attendance records...</span>
+                  </div>
                 </div>
-              } @else {
-                @for (employee of getEmployeeMonthData(); track employee.employee_id) {
-                  <div class="grid grid-cols-8 gap-1 py-2 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
-                    <div class="p-2 flex items-center">
-                      <div class="flex-shrink-0 h-6 w-6 mr-2">
-                        <div class="h-6 w-6 rounded-full bg-gray-300 flex items-center justify-center">
-                          <span class="text-xs font-medium text-gray-700">
-                            {{ employee.employee_name.charAt(0) || '?' }}
-                          </span>
+              </div>
+            } @else if (attendanceRecords().length === 0) {
+              <div class="loading-row">
+                <div class="employee-column">
+                  <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+                    No attendance records found for the selected month.
+                  </div>
+                </div>
+              </div>
+            } @else {
+              <div class="ledger-content">
+                <!-- Employee Names Column (Frozen) -->
+                <div class="employee-names-column">
+                  @for (employee of attendanceRecords(); track employee.employee_id) {
+                    <div class="employee-name-row">
+                      <div class="flex items-center">
+                        <div class="flex-shrink-0 h-8 w-8 mr-3">
+                          <div class="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
+                            <span class="text-sm font-medium text-gray-700">
+                              {{ employee.employee_name.charAt(0) || '?' }}
+                            </span>
+                          </div>
+                        </div>
+                        <div class="text-sm font-medium text-gray-900 dark:text-white truncate">
+                          {{ employee.employee_name || 'Unknown Employee' }}
                         </div>
                       </div>
-                      <div class="text-sm font-medium text-gray-900 dark:text-white truncate">
-                        {{ employee.employee_name || 'Unknown Employee' }}
-                      </div>
                     </div>
-                    @for (day of getCalendarDays(); track day.date) {
-                      <div class="p-1 text-center">
-                        @if (employee.attendance[day.date]) {
+                  }
+                </div>
+                
+                <!-- Days Data Column (Scrollable) -->
+                <div class="days-data-column" #bodyScrollContainer>
+                  @for (employee of attendanceRecords(); track employee.employee_id) {
+                    <div class="employee-days-row">
+                      @for (day of employee.days; track trackByDay($index, day)) {
+                        <div class="day-cell">
                           <div class="flex flex-col items-center space-y-1">
-                            <span [class]="getStatusClasses(employee.attendance[day.date].status_color)" class="text-xs">
-                              {{ employee.attendance[day.date].status_label }}
+                            <span [class]="getStatusClasses(day.status_color || 'secondary')" class="text-xs">
+                              {{ day.status_label }}
                             </span>
-                            @if (employee.attendance[day.date].in_time && employee.attendance[day.date].out_time) {
+                            @if (day.in_time && day.out_time) {
                               <div class="text-xs text-gray-600 dark:text-gray-400">
-                                {{ formatTime(employee.attendance[day.date].in_time) }}
+                                {{ formatTime(day.in_time) }} - {{ formatTime(day.out_time) }}
                               </div>
                               <div class="text-xs font-medium">
-                                {{ formatWorkingHours(employee.attendance[day.date].working_hours) }}
+                                {{ formatWorkingHours(day.working_hours || 0) }}
                               </div>
-                            } @else if (employee.attendance[day.date].time_off_type_name) {
+                            } @else if (day.time_off_type_name) {
                               <div class="text-xs text-gray-600 dark:text-gray-400">
-                                {{ employee.attendance[day.date].time_off_type_name }}
+                                {{ day.time_off_type_name }}
                               </div>
                             }
                           </div>
-                        } @else {
-                          <div class="text-xs text-gray-400">-</div>
-                        }
+                        </div>
+                      }
+                      <!-- Total Hours Column -->
+                      <div class="total-cell">
+                        <div class="text-sm font-medium text-gray-900 dark:text-white">
+                          {{ formatWorkingHours(employee.totalHours) }}
+                        </div>
                       </div>
-                    }
-                  </div>
-                }
-              }
-            </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
           </div>
         </div>
       </app-card>
     </div>
   `,
   styles: [`
+    .ledger-container {
+      @apply overflow-hidden;
+    }
+
+    .ledger-header {
+      @apply flex border-b-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800;
+    }
+
+    .employee-column-header {
+      @apply w-64 flex-shrink-0 p-4 border-r border-gray-200 dark:border-gray-700;
+    }
+
+    .days-scroll-container {
+      @apply flex-1 overflow-x-auto;
+    }
+
+    .days-container {
+      @apply flex;
+    }
+
+    .day-header {
+      @apply w-20 flex-shrink-0 p-2 text-center border-r border-gray-200 dark:border-gray-700;
+    }
+
+    .total-header {
+      @apply w-16 flex-shrink-0 p-2 text-center bg-gray-100 dark:bg-gray-700;
+    }
+
+    .ledger-body {
+      @apply max-h-96 overflow-y-auto;
+    }
+
+    .ledger-content {
+      @apply flex;
+    }
+
+    .employee-names-column {
+      @apply w-64 flex-shrink-0;
+    }
+
+    .employee-name-row {
+      @apply p-4 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-gray-900;
+    }
+
+    .days-data-column {
+      @apply flex-1 overflow-x-auto;
+    }
+
+    .employee-days-row {
+      @apply flex border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800;
+    }
+
+    .day-cell {
+      @apply w-20 flex-shrink-0 p-2 text-center border-r border-gray-200 dark:border-gray-700;
+    }
+
+    .total-cell {
+      @apply w-16 flex-shrink-0 p-2 text-center bg-gray-50 dark:bg-gray-800 font-medium;
+    }
+
+    .loading-row {
+      @apply flex;
+    }
+
+    .employee-column {
+      @apply w-64 flex-shrink-0 p-4 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900;
+    }
+
     .status-success {
       @apply inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200;
     }
@@ -173,14 +282,21 @@ import { BambooHRService } from '../../../shared/services/bamboohr.service';
       @apply inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200;
     }
     
+    .status-danger {
+      @apply inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200;
+    }
+    
     .status-secondary {
       @apply inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200;
     }
   `]
 })
-export class AttendanceMonthViewComponent {
+export class AttendanceMonthViewComponent implements AfterViewInit, OnDestroy {
+  @ViewChild('headerScrollContainer') headerScrollContainer!: ElementRef<HTMLDivElement>;
+  @ViewChild('bodyScrollContainer') bodyScrollContainer!: ElementRef<HTMLDivElement>;
+
   // Signals
-  attendanceRecords = signal<AttendanceRecord[]>([]);
+  attendanceRecords = signal<EmployeeMonthData[]>([]);
   employees = signal<SearchDropdownOption[]>([]);
   loading = signal(false);
   totalRecords = signal(0);
@@ -235,10 +351,13 @@ export class AttendanceMonthViewComponent {
     if (this.selectedMonth()) {
       const month = this.selectedMonth();
       if (month) {
-        const startOfMonth = this.getStartOfMonth(month);
-        const endOfMonth = this.getEndOfMonth(month);
-        filters.start_date = startOfMonth.toISOString().split('T')[0];
-        filters.end_date = endOfMonth.toISOString().split('T')[0];
+        const year = month.getFullYear();
+        const monthIndex = month.getMonth();
+        const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+        
+        // Simple date construction for the selected month
+        filters.start_date = `${year}-${(monthIndex + 1).toString().padStart(2, '0')}-01`;
+        filters.end_date = `${year}-${(monthIndex + 1).toString().padStart(2, '0')}-${daysInMonth.toString().padStart(2, '0')}`;
       }
     }
 
@@ -246,8 +365,15 @@ export class AttendanceMonthViewComponent {
       next: (response) => {
         this.loading.set(false);
         if (response.success) {
-          this.attendanceRecords.set(response.data.data);
-          this.totalRecords.set(response.data.total);
+          // Process data for month view using the same logic as week view
+          const processedData = this.processMonthAttendanceData(response.data.data);
+          this.attendanceRecords.set(processedData);
+          this.totalRecords.set(processedData.length);
+          
+          // Setup scroll synchronization after data is loaded
+          setTimeout(() => {
+            this.setupScrollSynchronization();
+          }, 100);
         } else {
           console.error('Failed to load attendance records');
         }
@@ -266,7 +392,15 @@ export class AttendanceMonthViewComponent {
 
   onMonthChange(event: Event): void {
     const target = event.target as HTMLInputElement;
-    this.selectedMonth.set(target.value ? new Date(target.value + '-01') : null);
+    if (target.value) {
+      // Parse the month input (YYYY-MM format) and create a date for the first day of that month
+      // Use explicit date creation to avoid timezone issues
+      const [year, month] = target.value.split('-');
+      const monthDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+      this.selectedMonth.set(monthDate);
+    } else {
+      this.selectedMonth.set(null);
+    }
   }
 
   clearFilters(): void {
@@ -284,95 +418,154 @@ export class AttendanceMonthViewComponent {
     return `${year}-${month}`;
   }
 
-  getStartOfMonth(date: Date): Date {
-    return new Date(date.getFullYear(), date.getMonth(), 1);
-  }
 
-  getEndOfMonth(date: Date): Date {
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0);
-  }
 
-  getCalendarDays(): any[] {
+  processMonthAttendanceData(data: AttendanceRecord[]): EmployeeMonthData[] {
     if (!this.selectedMonth()) return [];
     
-    const month = this.selectedMonth()!;
-    const startOfMonth = this.getStartOfMonth(month);
-    const endOfMonth = this.getEndOfMonth(month);
-    const days = [];
+    const selectedMonth = this.selectedMonth()!;
+    const year = selectedMonth.getFullYear();
+    const month = selectedMonth.getMonth();
     
-    // Add days from previous month to fill the first week
-    const startDay = startOfMonth.getDay();
-    const prevMonth = new Date(month.getFullYear(), month.getMonth() - 1, 0);
-    for (let i = startDay - 1; i >= 0; i--) {
-      const day = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), prevMonth.getDate() - i);
-      days.push({
-        date: day.toISOString().split('T')[0],
-        dayNumber: day.getDate(),
-        dayName: day.toLocaleDateString('en', { weekday: 'short' }),
-        isCurrentMonth: false
+    // Get the number of days in the selected month
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    const monthDays: Array<{date: string, dayNumber: number, dayName: string}> = [];
+    
+    // Generate ONLY the days of the selected month (1 to last day of month)
+    for (let day = 1; day <= daysInMonth; day++) {
+      // Create date string directly to avoid timezone issues
+      const dateString = `${year}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+      const date = new Date(year, month, day);
+      const dayName = date.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+      monthDays.push({
+        date: dateString,
+        dayNumber: day,
+        dayName: dayName
       });
     }
     
-    // Add days from current month
-    for (let day = 1; day <= endOfMonth.getDate(); day++) {
-      const date = new Date(month.getFullYear(), month.getMonth(), day);
+    // Get all employees first, then process their attendance
+    const allEmployees = this.employees();
+    const employeeMap = new Map<number, EmployeeMonthData>();
+    
+    // Initialize all employees with empty attendance
+    allEmployees.forEach(emp => {
+      employeeMap.set(emp.value, {
+        employee_id: emp.value,
+        employee_name: emp.label,
+        days: monthDays.map(day => ({
+          date: day.date,
+          dayNumber: day.dayNumber,
+          dayName: day.dayName,
+          isCurrentMonth: true,
+          status: 'no_track' as const,
+          status_label: 'No Track',
+          status_color: 'danger' as const,
+          in_time: null,
+          out_time: null,
+          working_hours: null,
+          time_off_type_name: null
+        })),
+        totalHours: 0
+      });
+    });
+    
+    // Process attendance data
+    data.forEach(record => {
+      const employee = employeeMap.get(record.employee_id);
+      if (!employee) return;
+      
+      const dayIndex = monthDays.findIndex(day => day.date === record.attendance_date);
+      
+      if (dayIndex !== -1) {
+        // Update the day with actual attendance data
+        employee.days[dayIndex] = {
+          date: record.attendance_date,
+          dayNumber: monthDays[dayIndex].dayNumber,
+          dayName: monthDays[dayIndex].dayName,
+          isCurrentMonth: true,
+          status: record.status,
+          status_label: record.status_label + (record.time_off_type_name ? ` (${record.time_off_type_name})` : ''),
+          status_color: record.status_color as 'success' | 'warning' | 'danger' | 'secondary',
+          in_time: record.in_time,
+          out_time: record.out_time,
+          working_hours: record.working_hours,
+          time_off_type_name: record.time_off_type_name
+        };
+        
+        // Add to total hours if present
+        if (record.status === 'present' && record.working_hours) {
+          employee.totalHours += record.working_hours;
+        }
+      }
+    });
+    
+    return Array.from(employeeMap.values());
+  }
+
+  getMonthDays(): MonthDay[] {
+    if (!this.selectedMonth()) return [];
+    
+    const selectedMonth = this.selectedMonth()!;
+    const year = selectedMonth.getFullYear();
+    const month = selectedMonth.getMonth();
+    
+    // Get the number of days in the selected month
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    const days: MonthDay[] = [];
+    
+    // Generate ONLY the days of the selected month (1 to last day of month)
+    for (let day = 1; day <= daysInMonth; day++) {
+      // Create date string directly to avoid timezone issues
+      const dateString = `${year}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+      const date = new Date(year, month, day);
+      const dayName = date.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
       days.push({
-        date: date.toISOString().split('T')[0],
+        date: dateString,
         dayNumber: day,
-        dayName: date.toLocaleDateString('en', { weekday: 'short' }),
+        dayName: dayName,
         isCurrentMonth: true
-      });
-    }
-    
-    // Add days from next month to fill the last week
-    const remainingDays = 42 - days.length; // 6 weeks * 7 days
-    for (let day = 1; day <= remainingDays; day++) {
-      const date = new Date(month.getFullYear(), month.getMonth() + 1, day);
-      days.push({
-        date: date.toISOString().split('T')[0],
-        dayNumber: day,
-        dayName: date.toLocaleDateString('en', { weekday: 'short' }),
-        isCurrentMonth: false
       });
     }
     
     return days;
   }
 
-  getEmployeeMonthData(): any[] {
-    const employeeMap = new Map();
-    
-    this.attendanceRecords().forEach(record => {
-      if (!employeeMap.has(record.employee_id)) {
-        employeeMap.set(record.employee_id, {
-          employee_id: record.employee_id,
-          employee_name: record.employee_name,
-          attendance: {}
-        });
-      }
-      
-      const employee = employeeMap.get(record.employee_id);
-      employee.attendance[record.attendance_date] = record;
+  formatDateHeader(dateString: string): string {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-IN', { 
+      day: '2-digit', 
+      month: '2-digit' 
     });
-    
-    return Array.from(employeeMap.values());
   }
 
-  getMonthSummary(): any {
-    const records = this.attendanceRecords();
-    const employeeIds = new Set(records.map(r => r.employee_id));
-    
-    return {
-      totalEmployees: employeeIds.size,
-      presentDays: records.filter(r => r.status === 'present').length,
-      timeOffDays: records.filter(r => r.status === 'time_off').length,
-      noTrackDays: records.filter(r => r.status === 'no_track').length
-    };
+  trackByDay(index: number, day: any): string {
+    return `${index}-${day.date}-${day.status}`;
   }
 
   formatTime(timeString: string | null): string {
     if (!timeString) return '-';
-    return new Date(timeString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    // Handle time-only strings (HH:MM:SS format)
+    const timeOnlyRegex = /^\d{2}:\d{2}:\d{2}$/;
+    if (timeOnlyRegex.test(timeString)) {
+      return timeString.substring(0, 5); // Return HH:MM format
+    }
+    
+    // Handle datetime strings - display in IST timezone
+    const date = new Date(timeString);
+    if (isNaN(date.getTime())) {
+      return timeString; // Return as-is if parsing fails
+    }
+    
+    // Format time in IST (UTC+5:30)
+    return date.toLocaleTimeString('en-IN', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      timeZone: 'Asia/Kolkata'
+    });
   }
 
   formatWorkingHours(hours: number | null): string {
@@ -386,10 +579,73 @@ export class AttendanceMonthViewComponent {
         return 'status-success';
       case 'warning':
         return 'status-warning';
+      case 'danger':
+        return 'status-danger';
       case 'secondary':
         return 'status-secondary';
       default:
         return 'status-secondary';
+    }
+  }
+
+  // Store bound functions for proper cleanup
+  private headerScrollHandler?: () => void;
+  private bodyScrollHandler?: () => void;
+
+  ngAfterViewInit(): void {
+    // Use setTimeout to ensure DOM is fully rendered
+    setTimeout(() => {
+      this.setupScrollSynchronization();
+    }, 100);
+  }
+
+  ngOnDestroy(): void {
+    // Clean up event listeners properly
+    if (this.headerScrollContainer && this.headerScrollHandler) {
+      this.headerScrollContainer.nativeElement.removeEventListener('scroll', this.headerScrollHandler);
+    }
+    if (this.bodyScrollContainer && this.bodyScrollHandler) {
+      this.bodyScrollContainer.nativeElement.removeEventListener('scroll', this.bodyScrollHandler);
+    }
+  }
+
+  private setupScrollSynchronization(): void {
+    if (this.headerScrollContainer && this.bodyScrollContainer) {
+      console.log('Setting up scroll synchronization...');
+      
+      // Create bound functions for proper cleanup
+      this.headerScrollHandler = () => {
+        if (this.bodyScrollContainer) {
+          const scrollLeft = this.headerScrollContainer.nativeElement.scrollLeft;
+          console.log('Header scroll:', scrollLeft);
+          this.bodyScrollContainer.nativeElement.scrollTo({
+            left: scrollLeft,
+            behavior: 'auto'
+          });
+        }
+      };
+
+      this.bodyScrollHandler = () => {
+        if (this.headerScrollContainer) {
+          const scrollLeft = this.bodyScrollContainer.nativeElement.scrollLeft;
+          console.log('Body scroll:', scrollLeft);
+          this.headerScrollContainer.nativeElement.scrollTo({
+            left: scrollLeft,
+            behavior: 'auto'
+          });
+        }
+      };
+
+      // Add event listeners
+      this.headerScrollContainer.nativeElement.addEventListener('scroll', this.headerScrollHandler);
+      this.bodyScrollContainer.nativeElement.addEventListener('scroll', this.bodyScrollHandler);
+      
+      console.log('Scroll synchronization setup complete');
+    } else {
+      console.log('Scroll containers not found:', {
+        header: !!this.headerScrollContainer,
+        body: !!this.bodyScrollContainer
+      });
     }
   }
 }

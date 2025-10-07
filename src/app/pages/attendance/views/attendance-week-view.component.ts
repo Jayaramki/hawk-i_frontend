@@ -10,6 +10,27 @@ import { SearchDropdownComponent, SearchDropdownOption } from '../../../shared/c
 import { AttendanceService, AttendanceRecord, AttendanceFilters } from '../../../shared/services/attendance.service';
 import { BambooHRService } from '../../../shared/services/bamboohr.service';
 
+// Week view specific interfaces
+interface WeekDay {
+  date: string;
+  dayName: string;
+  dayIndex: number;
+  status: 'present' | 'time_off' | 'no_track';
+  status_label: string;
+  status_color: 'success' | 'warning' | 'danger' | 'secondary';
+  in_time: string | null;
+  out_time: string | null;
+  working_hours: number | null;
+  time_off_type_name: string | null;
+}
+
+interface EmployeeWeekData {
+  employee_id: number;
+  employee_name: string;
+  days: WeekDay[];
+  totalHours: number;
+}
+
 @Component({
   selector: 'app-attendance-week-view',
   standalone: true,
@@ -67,27 +88,6 @@ import { BambooHRService } from '../../../shared/services/bamboohr.service';
         </div>
       </app-card>
 
-      <!-- Week Summary -->
-      <app-card>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div class="text-center">
-            <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ getWeekSummary().totalEmployees }}</div>
-            <div class="text-sm text-gray-600 dark:text-gray-400">Total Employees</div>
-          </div>
-          <div class="text-center">
-            <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ getWeekSummary().presentDays }}</div>
-            <div class="text-sm text-gray-600 dark:text-gray-400">Present Days</div>
-          </div>
-          <div class="text-center">
-            <div class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{{ getWeekSummary().timeOffDays }}</div>
-            <div class="text-sm text-gray-600 dark:text-gray-400">Time Off Days</div>
-          </div>
-          <div class="text-center">
-            <div class="text-2xl font-bold text-gray-600 dark:text-gray-400">{{ getWeekSummary().noTrackDays }}</div>
-            <div class="text-sm text-gray-600 dark:text-gray-400">No Track Days</div>
-          </div>
-        </div>
-      </app-card>
 
       <!-- Attendance Grid -->
       <app-card>
@@ -98,36 +98,72 @@ import { BambooHRService } from '../../../shared/services/bamboohr.service';
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Employee
                 </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Mon
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Tue
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Wed
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Thu
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Fri
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Sat
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Sun
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Total Hours
+                @if (attendanceRecords().length > 0) {
+                  @for (day of attendanceRecords()[0].days; track day.date) {
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      <div class="flex flex-col items-center">
+                        <span class="font-semibold">{{ day.dayName }}</span>
+                        <span class="text-xs text-gray-400 font-normal">{{ formatDateHeader(day.date) }}</span>
+                      </div>
+                    </th>
+                  }
+                } @else {
+                  <!-- Fallback headers when no data -->
+                  <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <div class="flex flex-col items-center">
+                      <span class="font-semibold">Mon</span>
+                      <span class="text-xs text-gray-400 font-normal">--</span>
+                    </div>
+                  </th>
+                  <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <div class="flex flex-col items-center">
+                      <span class="font-semibold">Tue</span>
+                      <span class="text-xs text-gray-400 font-normal">--</span>
+                    </div>
+                  </th>
+                  <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <div class="flex flex-col items-center">
+                      <span class="font-semibold">Wed</span>
+                      <span class="text-xs text-gray-400 font-normal">--</span>
+                    </div>
+                  </th>
+                  <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <div class="flex flex-col items-center">
+                      <span class="font-semibold">Thu</span>
+                      <span class="text-xs text-gray-400 font-normal">--</span>
+                    </div>
+                  </th>
+                  <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <div class="flex flex-col items-center">
+                      <span class="font-semibold">Fri</span>
+                      <span class="text-xs text-gray-400 font-normal">--</span>
+                    </div>
+                  </th>
+                  <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <div class="flex flex-col items-center">
+                      <span class="font-semibold">Sat</span>
+                      <span class="text-xs text-gray-400 font-normal">--</span>
+                    </div>
+                  </th>
+                  <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <div class="flex flex-col items-center">
+                      <span class="font-semibold">Sun</span>
+                      <span class="text-xs text-gray-400 font-normal">--</span>
+                    </div>
+                  </th>
+                }
+                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <div class="flex flex-col items-center">
+                    <span class="font-semibold">Total</span>
+                    <span class="text-xs text-gray-400 font-normal">Hours</span>
+                  </div>
                 </th>
               </tr>
             </thead>
             <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
               @if (loading()) {
                 <tr>
-                  <td colspan="9" class="px-6 py-4 text-center">
+                  <td [attr.colspan]="attendanceRecords().length > 0 ? attendanceRecords()[0].days.length + 2 : 8" class="px-6 py-4 text-center">
                     <div class="flex items-center justify-center">
                       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                       <span class="ml-2 text-gray-600 dark:text-gray-400">Loading attendance records...</span>
@@ -136,12 +172,12 @@ import { BambooHRService } from '../../../shared/services/bamboohr.service';
                 </tr>
               } @else if (attendanceRecords().length === 0) {
                 <tr>
-                  <td colspan="9" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                  <td [attr.colspan]="attendanceRecords().length > 0 ? attendanceRecords()[0].days.length + 2 : 8" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
                     No attendance records found for the selected week.
                   </td>
                 </tr>
               } @else {
-                @for (employee of getEmployeeWeekData(); track employee.employee_id) {
+                @for (employee of attendanceRecords(); track employee.employee_id) {
                   <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
                     <td class="px-6 py-4 whitespace-nowrap">
                       <div class="flex items-center">
@@ -208,7 +244,7 @@ import { BambooHRService } from '../../../shared/services/bamboohr.service';
 })
 export class AttendanceWeekViewComponent {
   // Signals
-  attendanceRecords = signal<AttendanceRecord[]>([]);
+  attendanceRecords = signal<EmployeeWeekData[]>([]);
   employees = signal<SearchDropdownOption[]>([]);
   loading = signal(false);
   totalRecords = signal(0);
@@ -274,8 +310,9 @@ export class AttendanceWeekViewComponent {
       next: (response) => {
         this.loading.set(false);
         if (response.success) {
-          this.attendanceRecords.set(response.data.data);
-          this.totalRecords.set(response.data.total);
+          const processedData = this.processWeekAttendanceData(response.data.data);
+          this.attendanceRecords.set(processedData);
+          this.totalRecords.set(processedData.length);
         } else {
           console.error('Failed to load attendance records');
         }
@@ -297,15 +334,23 @@ export class AttendanceWeekViewComponent {
     if (target.value) {
       // Parse week input format (YYYY-WNN) to get the first day of the week
       const [year, week] = target.value.split('-W');
-      const firstDayOfYear = new Date(parseInt(year), 0, 1);
-      const firstMonday = new Date(firstDayOfYear);
-      const dayOfWeek = firstDayOfYear.getDay();
-      const daysToAdd = dayOfWeek === 0 ? 1 : 8 - dayOfWeek; // Get to first Monday
-      firstMonday.setDate(firstDayOfYear.getDate() + daysToAdd);
+      const yearNum = parseInt(year);
+      const weekNum = parseInt(week);
+      
+      // Use ISO week calculation - more reliable approach
+      // Create a date for January 4th (always in week 1 of ISO weeks)
+      const jan4 = new Date(yearNum, 0, 4);
+      
+      // Get the day of week for January 4th (0 = Sunday, 1 = Monday, etc.)
+      const dayOfWeek = jan4.getDay();
+      
+      // Calculate the Monday of week 1
+      const mondayOfWeek1 = new Date(jan4);
+      mondayOfWeek1.setDate(jan4.getDate() - dayOfWeek + 1);
       
       // Calculate the start of the selected week
-      const weekStart = new Date(firstMonday);
-      weekStart.setDate(firstMonday.getDate() + (parseInt(week) - 1) * 7);
+      const weekStart = new Date(mondayOfWeek1);
+      weekStart.setDate(mondayOfWeek1.getDate() + (weekNum - 1) * 7);
       
       this.selectedWeek.set(weekStart);
     } else {
@@ -320,7 +365,7 @@ export class AttendanceWeekViewComponent {
     this.totalRecords.set(0);
   }
 
-  getWeekValue(): string {
+  getWeekValue(): string {    
     if (!this.selectedWeek()) return '';
     const date = this.selectedWeek();
     if (!date) return '';
@@ -330,9 +375,17 @@ export class AttendanceWeekViewComponent {
   }
 
   getWeekNumber(date: Date): number {
-    const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
-    const pastDaysOfYear = (date.getTime() - firstDayOfYear.getTime()) / 86400000;
-    return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+    // Use ISO week calculation for consistency
+    const jan4 = new Date(date.getFullYear(), 0, 4);
+    const dayOfWeek = jan4.getDay();
+    const mondayOfWeek1 = new Date(jan4);
+    mondayOfWeek1.setDate(jan4.getDate() - dayOfWeek + 1);
+    
+    const diffTime = date.getTime() - mondayOfWeek1.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    const weekNumber = Math.floor(diffDays / 7) + 1;
+    
+    return weekNumber;
   }
 
   getStartOfWeek(date: Date): Date {
@@ -349,49 +402,41 @@ export class AttendanceWeekViewComponent {
     return end;
   }
 
-  getEmployeeWeekData(): any[] {
-    const employeeMap = new Map();
-    
-    this.attendanceRecords().forEach(record => {
-      if (!employeeMap.has(record.employee_id)) {
-        employeeMap.set(record.employee_id, {
-          employee_id: record.employee_id,
-          employee_name: record.employee_name,
-          days: [],
-          totalHours: 0
-        });
-      }
-      
-      const employee = employeeMap.get(record.employee_id);
-      employee.days.push(record);
-      if (record.working_hours) {
-        employee.totalHours += record.working_hours;
-      }
-    });
-    
-    return Array.from(employeeMap.values());
-  }
 
-  getWeekSummary(): any {
-    const records = this.attendanceRecords();
-    const employeeIds = new Set(records.map(r => r.employee_id));
-    
-    return {
-      totalEmployees: employeeIds.size,
-      presentDays: records.filter(r => r.status === 'present').length,
-      timeOffDays: records.filter(r => r.status === 'time_off').length,
-      noTrackDays: records.filter(r => r.status === 'no_track').length
-    };
-  }
 
   formatTime(timeString: string | null): string {
     if (!timeString) return '-';
-    return new Date(timeString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    // Handle time-only strings (HH:MM:SS format)
+    if (timeString.match(/^\d{2}:\d{2}:\d{2}$/)) {
+      return timeString.substring(0, 5); // Return HH:MM format
+    }
+    
+    // Handle datetime strings - display in IST timezone
+    const date = new Date(timeString);
+    if (isNaN(date.getTime())) {
+      return timeString; // Return as-is if parsing fails
+    }
+    
+    // Format time in IST (UTC+5:30)
+    return date.toLocaleTimeString('en-IN', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      timeZone: 'Asia/Kolkata'
+    });
   }
 
   formatWorkingHours(hours: number | null): string {
     if (!hours) return '-';
     return `${hours.toFixed(1)}h`;
+  }
+
+  formatDateHeader(dateString: string): string {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-IN', { 
+      day: '2-digit', 
+      month: '2-digit' 
+    });
   }
 
   getStatusClasses(statusColor: string): string {
@@ -405,6 +450,77 @@ export class AttendanceWeekViewComponent {
       default:
         return 'status-secondary';
     }
+  }
+
+  processWeekAttendanceData(data: AttendanceRecord[]): EmployeeWeekData[] {
+    if (!this.selectedWeek()) return [];
+    
+    const weekStart = this.getStartOfWeek(this.selectedWeek()!);
+    const weekDays: Array<{date: string, dayName: string, dayIndex: number}> = [];
+    
+    // Generate all 7 days of the week
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(weekStart);
+      day.setDate(weekStart.getDate() + i);
+      weekDays.push({
+        date: day.toISOString().split('T')[0],
+        dayName: day.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase(),
+        dayIndex: i
+      });
+    }
+    
+    // Group data by employee
+    const employeeMap = new Map<number, EmployeeWeekData>();
+    
+    data.forEach(record => {
+      if (!employeeMap.has(record.employee_id)) {
+        employeeMap.set(record.employee_id, {
+          employee_id: record.employee_id,
+          employee_name: record.employee_name,
+          days: weekDays.map(day => ({
+            date: day.date,
+            dayName: day.dayName,
+            dayIndex: day.dayIndex,
+            status: 'no_track' as const,
+            status_label: 'No Track',
+            status_color: 'danger' as const,
+            in_time: null,
+            out_time: null,
+            working_hours: null,
+            time_off_type_name: null
+          })),
+          totalHours: 0
+        });
+      }
+      
+      const employee = employeeMap.get(record.employee_id);
+      if (!employee) return;
+      
+      const dayIndex = weekDays.findIndex(day => day.date === record.attendance_date);
+      
+      if (dayIndex !== -1) {
+        // Update the day with actual attendance data
+        employee.days[dayIndex] = {
+          date: record.attendance_date,
+          dayName: weekDays[dayIndex].dayName,
+          dayIndex: dayIndex,
+          status: record.status,
+          status_label: record.status_label + (record.time_off_type_name ? ` (${record.time_off_type_name})` : ''),
+          status_color: record.status_color as 'success' | 'warning' | 'danger' | 'secondary',
+          in_time: record.in_time,
+          out_time: record.out_time,
+          working_hours: record.working_hours,
+          time_off_type_name: record.time_off_type_name
+        };
+        
+        // Add to total hours if present
+        if (record.status === 'present' && record.working_hours) {
+          employee.totalHours += record.working_hours;
+        }
+      }
+    });
+    
+    return Array.from(employeeMap.values());
   }
 
   trackByDay(index: number, day: any): string {

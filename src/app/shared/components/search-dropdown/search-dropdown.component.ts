@@ -268,13 +268,6 @@ export class SearchDropdownComponent implements OnInit, OnDestroy, AfterViewInit
     const shouldShow = this.showDropdownSignal() && 
            !this.disabled && 
            this.searchTerm().length >= this.minSearchLength;
-    console.log('showDropdown computed:', {
-      showDropdownSignal: this.showDropdownSignal(),
-      disabled: this.disabled,
-      searchTermLength: this.searchTerm().length,
-      minSearchLength: this.minSearchLength,
-      shouldShow
-    });
     return shouldShow;
   });
 
