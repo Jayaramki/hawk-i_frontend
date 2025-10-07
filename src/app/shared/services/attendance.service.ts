@@ -4,21 +4,18 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export interface AttendanceRecord {
-  id: number;
+  id: number | null;
+  employee_id: number;
+  employee_name: string;
   attendance_date: string;
   in_time: string | null;
   out_time: string | null;
   working_hours: number | null;
-  employee_name: string;
-  department: string;
-  employee: {
-    id: number;
-    full_name: string;
-    department: {
-      id: number;
-      name: string;
-    };
-  };
+  status: 'present' | 'time_off' | 'no_track';
+  status_label: string;
+  status_color: 'success' | 'warning' | 'secondary';
+  time_off_type: number | null;
+  time_off_type_name: string | null;
 }
 
 export interface AttendanceImportResponse {
@@ -38,6 +35,7 @@ export interface AttendanceFilters {
   start_date?: string;
   end_date?: string;
   department_id?: number;
+  view_type?: 'day' | 'week' | 'month';
   per_page?: number;
   page?: number;
 }

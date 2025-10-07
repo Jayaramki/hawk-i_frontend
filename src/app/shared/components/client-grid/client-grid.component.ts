@@ -8,6 +8,11 @@ export interface GridColumn {
   sortable?: boolean;
   width?: string;
   template?: TemplateRef<any>;
+  type?: 'text' | 'status' | 'badge';
+  statusConfig?: {
+    colorField?: string; // Field name that contains the color value
+    labelField?: string; // Field name that contains the label value
+  };
 }
 
 export interface GridAction {
@@ -75,9 +80,17 @@ export interface GridAction {
                 <ng-container *ngTemplateOutlet="column.template; context: { $implicit: item, column: column }"></ng-container>
               </ng-container>
               <ng-template #defaultCell>
-                <div class="text-sm text-gray-900 dark:text-white">
-                  {{ getNestedProperty(item, column.key) }}
-                </div>
+                <ng-container *ngIf="column.type === 'status' || column.type === 'badge'; else textCell">
+                  <span [class]="getStatusClasses(getNestedProperty(item, column.statusConfig?.colorField || 'status_color'))" 
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
+                    {{ getNestedProperty(item, column.statusConfig?.labelField || column.key) }}
+                  </span>
+                </ng-container>
+                <ng-template #textCell>
+                  <div class="text-sm text-gray-900 dark:text-white">
+                    {{ getNestedProperty(item, column.key) }}
+                  </div>
+                </ng-template>
               </ng-template>
             </td>
             <td *ngIf="actions && actions.length > 0" class="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -306,6 +319,23 @@ export class ClientGridComponent implements OnInit, OnChanges {
 
   getNestedProperty(obj: any, path: string): any {
     return path.split('.').reduce((current, key) => current?.[key], obj) || '';
+  }
+
+  getStatusClasses(statusColor: string): string {
+    switch (statusColor) {
+      case 'success':
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      case 'warning':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+      case 'secondary':
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+      case 'danger':
+        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+      case 'info':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+    }
   }
 }
 
