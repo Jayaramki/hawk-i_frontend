@@ -1,14 +1,7 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TableModule } from 'primeng/table';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { DropdownModule } from 'primeng/dropdown';
-import { PaginatorModule } from 'primeng/paginator';
-import { MultiSelectModule } from 'primeng/multiselect';
-import { CalendarModule } from 'primeng/calendar';
-import { TooltipModule } from 'primeng/tooltip';
+// Removed PrimeNG imports - using custom design system components
 import { ButtonComponent } from '../button/button.component';
 
 export interface DataTableColumn {
@@ -45,14 +38,6 @@ export interface DataTableFilter {
   imports: [
     CommonModule,
     FormsModule,
-    TableModule,
-    ButtonModule,
-    InputTextModule,
-    DropdownModule,
-    PaginatorModule,
-    MultiSelectModule,
-    CalendarModule,
-    TooltipModule,
     ButtonComponent
   ],
   template: `

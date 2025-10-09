@@ -95,7 +95,7 @@ export interface SearchDropdownOption {
         <input
           #searchInput
           type="text"
-          class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+          class="w-full px-3 py-2 pr-20 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
           [placeholder]="placeholder"
           [ngModel]="searchTerm()"
           (ngModelChange)="searchTerm.set($event)"
@@ -104,8 +104,20 @@ export interface SearchDropdownOption {
           (blur)="onBlur()"
           (keydown)="onKeyDown($event)"
         />
-        <div class="absolute inset-y-0 right-0 flex items-center pr-3">
-          <i class="fas fa-search text-gray-400"></i>
+        <!-- Icons container with proper spacing -->
+        <div class="absolute inset-y-0 right-0 flex items-center pr-3 space-x-2">
+          <!-- Clear button (only show when there's a selection) -->
+          <button
+            *ngIf="clearable && selectedOption()"
+            type="button"
+            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none"
+            (click)="clearSelection($event)"
+            (mousedown)="$event.preventDefault()"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+          <!-- Search icon (only show when no selection or when searching) -->
+          <i *ngIf="!selectedOption() || showDropdown()" class="fas fa-search text-gray-400"></i>
         </div>
       </div>
 
@@ -130,21 +142,6 @@ export interface SearchDropdownOption {
         </button>
       </div>
 
-      <!-- Selected Value Display (when not searching) -->
-      <div 
-        *ngIf="!showDropdown() && selectedOption()" 
-        class="absolute inset-0 flex items-center px-3 py-2 pointer-events-none"
-      >
-        <span class="text-gray-900 dark:text-white">{{ selectedOption()?.label }}</span>
-        <button
-          *ngIf="clearable"
-          type="button"
-          class="ml-auto mr-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-          (click)="clearSelection($event)"
-        >
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
     </div>
   `
 })
@@ -282,7 +279,6 @@ export class SearchDropdownComponent implements OnInit, OnDestroy, AfterViewInit
     const filtered = this.options.filter(option => {
       const searchText = option.searchText || option.label;
       const matches = searchText.toLowerCase().includes(searchLower);
-      console.log(`Searching for "${searchLower}" in "${searchText}" - matches: ${matches}`);
       return matches;
     });
     
@@ -407,16 +403,34 @@ export class SearchDropdownComponent implements OnInit, OnDestroy, AfterViewInit
     this.searchTerm.set(option.label);
     this.showDropdownSignal.set(false);
     this.selectedIndex.set(-1);
+    
+    // Clear the portal dropdown
+    this.clearPortalDropdown();
+    
+    // Emit the change
     this.selectionChange.emit(option);
   }
 
   clearSelection(event: Event): void {
     event.stopPropagation();
+    event.preventDefault();
+    
+    // Clear all state
     this.selectedOptionSignal.set(null);
     this.searchTerm.set('');
     this.showDropdownSignal.set(false);
     this.selectedIndex.set(-1);
+    
+    // Clear the portal dropdown
+    this.clearPortalDropdown();
+    
+    // Emit the change
     this.selectionChange.emit(null);
+    
+    // Focus back to input
+    if (this.searchInput) {
+      this.searchInput.nativeElement.focus();
+    }
   }
 
   // Track by function for performance

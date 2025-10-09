@@ -12,6 +12,7 @@ import { TabPanelComponent } from '../../shared/components/tab/tab-panel.compone
 import { AttendanceDayViewComponent } from './views/attendance-day-view.component';
 import { AttendanceWeekViewComponent } from './views/attendance-week-view.component';
 import { AttendanceMonthViewComponent } from './views/attendance-month-view.component';
+import { AttendanceImportComponent } from './attendance-import/attendance-import.component';
 
 // Services
 import { AttendanceService } from '../../shared/services/attendance.service';
@@ -29,7 +30,8 @@ import { BambooHRService } from '../../shared/services/bamboohr.service';
     TabPanelComponent,
     AttendanceDayViewComponent,
     AttendanceWeekViewComponent,
-    AttendanceMonthViewComponent
+    AttendanceMonthViewComponent,
+    AttendanceImportComponent
   ],
   templateUrl: './attendance.component.html',
   styleUrls: ['./attendance.component.scss']
@@ -39,7 +41,8 @@ export class AttendanceComponent {
   tabs: TabItem[] = [
     { id: 'day', label: 'Day View', icon: 'fas fa-calendar-day' },
     { id: 'week', label: 'Week View', icon: 'fas fa-calendar-week' },
-    { id: 'month', label: 'Month View', icon: 'fas fa-calendar-alt' }
+    { id: 'month', label: 'Month View', icon: 'fas fa-calendar-alt' },
+    { id: 'import', label: 'Import Data', icon: 'fas fa-upload' }
   ];
   
   activeTab = signal('day');

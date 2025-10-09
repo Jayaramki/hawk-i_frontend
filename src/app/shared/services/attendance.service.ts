@@ -26,8 +26,16 @@ export interface AttendanceImportResponse {
     error_count: number;
     total_rows: number;
     errors: string[];
+    new_employees?: NewEmployee[];
+    new_employees_count?: number;
   };
   errors?: any;
+}
+
+export interface NewEmployee {
+  id: number;
+  ina_emp_id: string;
+  employee_name: string;
 }
 
 export interface AttendanceFilters {

@@ -33,6 +33,13 @@
         <app-attendance-month-view></app-attendance-month-view>
       </app-tab-panel>
       
+      <!-- Import Tab -->
+      <app-tab-panel 
+        id="import" 
+        [isActive]="activeTab() === 'import'">
+        <app-attendance-import></app-attendance-import>
+      </app-tab-panel>
+      
     </app-tab>
   </div>
 </app-layout>

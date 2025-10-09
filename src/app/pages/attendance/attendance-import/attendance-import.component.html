@@ -1,165 +1,254 @@
-<div class="attendance-import-container">
-  <div class="card">
-    <div class="card-header">
-      <h2>Import Attendance Data</h2>
-      <p class="text-muted">Upload a spreadsheet file to import attendance records</p>
+<div class="space-y-6">
+  <!-- Header Section -->
+  <app-card>
+    <div class="text-center py-8">
+      <div class="mx-auto w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mb-4">
+        <i class="fas fa-upload text-2xl text-blue-600 dark:text-blue-400"></i>
+      </div>
+      <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Import Attendance Data</h2>
+      <p class="text-gray-600 dark:text-gray-400">Upload a spreadsheet file to import attendance records</p>
     </div>
+  </app-card>
 
-    <div class="card-body">
-      <!-- File Upload Section -->
-      <div class="upload-section">
-        <div class="upload-area" [class.dragover]="false">
-          <div class="upload-content">
-            <i class="pi pi-cloud-upload" style="font-size: 3rem; color: #6c757d;"></i>
-            <h4>Choose File or Drag & Drop</h4>
-            <p>Select an Excel (.xlsx, .xls) or CSV file</p>
-            <input 
-              type="file" 
-              #fileInput
-              class="file-input" 
-              accept=".xlsx,.xls,.csv"
-              (change)="onFileSelected($event)"
-            />
-            <button 
-              type="button" 
-              class="btn btn-outline-primary"
-              (click)="fileInput.click()"
-            >
-              <i class="pi pi-upload"></i> Select File
-            </button>
+  <!-- File Upload Section -->
+  <app-card>
+    <div class="space-y-6">
+      <!-- Upload Area -->
+      <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center hover:border-blue-400 dark:hover:border-blue-500 transition-colors">
+        <div class="space-y-4">
+          <div class="mx-auto w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+            <i class="fas fa-cloud-upload-alt text-xl text-gray-500 dark:text-gray-400"></i>
           </div>
+          <div>
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Choose File or Drag & Drop</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Select an Excel (.xlsx, .xls) or CSV file</p>
+          </div>
+          <input 
+            type="file" 
+            #fileInput
+            class="hidden" 
+            accept=".xlsx,.xls,.csv"
+            (change)="onFileSelected($event)"
+          />
+          <app-button 
+            variant="primary" 
+            size="md"
+            (click)="fileInput.click()">
+            <i class="fas fa-upload mr-2"></i>
+            Select File
+          </app-button>
         </div>
+      </div>
 
-        <!-- Selected File Info -->
-        <div *ngIf="selectedFile" class="selected-file">
-          <div class="file-info">
-            <i class="pi pi-file" style="color: #28a745;"></i>
-            <div class="file-details">
-              <strong>{{ selectedFile?.name }}</strong>
-                <small class="text-muted">{{ getFileSize(selectedFile?.size || 0) }}</small>
+      <!-- Selected File Info -->
+      <div *ngIf="selectedFile()" class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
+              <i class="fas fa-file text-green-600 dark:text-green-400"></i>
             </div>
-            <button 
-              type="button" 
-              class="btn btn-sm btn-outline-danger"
-              (click)="onClearFile()"
-            >
-              <i class="pi pi-times"></i>
-            </button>
+            <div>
+              <p class="font-medium text-gray-900 dark:text-white">{{ selectedFile()?.name }}</p>
+              <p class="text-sm text-gray-500 dark:text-gray-400">{{ getFileSize(selectedFile()?.size || 0) }}</p>
+            </div>
           </div>
+          <app-button 
+            variant="secondary" 
+            size="sm"
+            (click)="onClearFile()">
+            <i class="fas fa-times"></i>
+          </app-button>
         </div>
+      </div>
 
-        <!-- Upload Progress -->
-        <div *ngIf="isUploading" class="upload-progress">
-          <div class="progress">
-            <div 
-              class="progress-bar" 
-              [style.width.%]="uploadProgress"
-              role="progressbar"
-            ></div>
+      <!-- Upload Progress -->
+      <div *ngIf="isUploading()" class="space-y-2">
+        <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+          <span>Uploading and processing file...</span>
+          <span>{{ uploadProgress() }}%</span>
+        </div>
+        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+          <div 
+            class="bg-blue-600 h-2 rounded-full transition-all duration-300"
+            [style.width.%]="uploadProgress()">
           </div>
-          <small class="text-muted">Uploading and processing file...</small>
         </div>
       </div>
 
       <!-- Action Buttons -->
-      <div class="action-buttons">
-        <button 
-          type="button" 
-          class="btn btn-primary"
-          [disabled]="!selectedFile || isUploading"
-          (click)="onUpload()"
-        >
-          <i class="pi pi-upload"></i>
-          {{ isUploading ? 'Uploading...' : 'Upload & Import' }}
-        </button>
+      <div class="flex space-x-4">
+        <app-button 
+          variant="primary" 
+          size="md"
+          [disabled]="!selectedFile() || isUploading()"
+          [loading]="isUploading()"
+          (click)="onUpload()">
+          <i class="fas fa-upload mr-2"></i>
+          {{ isUploading() ? 'Uploading...' : 'Upload & Import' }}
+        </app-button>
         
-        <button 
-          type="button" 
-          class="btn btn-outline-secondary"
-          (click)="onDownloadTemplate()"
-        >
-          <i class="pi pi-download"></i> Download Template
-        </button>
+        <app-button 
+          variant="secondary" 
+          size="md"
+          (click)="onDownloadTemplate()">
+          <i class="fas fa-download mr-2"></i>
+          Download Template
+        </app-button>
       </div>
+    </div>
+  </app-card>
 
-      <!-- Import Results -->
-      <div *ngIf="showResult && importResult" class="import-results">
-        <div class="result-card" [class.success]="importResult?.success" [class.error]="!importResult?.success">
-          <div class="result-header">
-            <i [class]="importResult?.success ? 'pi pi-check-circle' : 'pi pi-times-circle'"></i>
-            <h4>{{ importResult?.success ? 'Import Successful' : 'Import Failed' }}</h4>
-          </div>
-          
-          <div class="result-body">
-            <p>{{ importResult?.message }}</p>
-            
-            <div *ngIf="importResult?.data" class="result-stats">
-              <div class="stat-item">
-                <span class="stat-label">Total Rows:</span>
-                <span class="stat-value">{{ importResult?.data?.total_rows || 0 }}</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">Processed:</span>
-                <span class="stat-value success">{{ importResult?.data?.processed_count || 0 }}</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">Errors:</span>
-                <span class="stat-value error">{{ importResult?.data?.error_count || 0 }}</span>
-              </div>
-            </div>
-
-            <!-- Error Details -->
-            <div *ngIf="importResult.data?.errors && importResult.data.errors.length > 0" class="error-details">
-              <h5>Error Details:</h5>
-              <ul class="error-list">
-                <li *ngFor="let error of importResult.data.errors">{{ error }}</li>
-              </ul>
-            </div>
-          </div>
+  <!-- Import Results -->
+  <app-card *ngIf="showResult() && importResult()">
+    <div class="space-y-4">
+      <div class="flex items-center space-x-3">
+        <div class="w-8 h-8 rounded-full flex items-center justify-center"
+             [class]="importResult()?.success ? 'bg-green-100 dark:bg-green-900' : 'bg-red-100 dark:bg-red-900'">
+          <i [class]="importResult()?.success ? 'fas fa-check text-green-600 dark:text-green-400' : 'fas fa-times text-red-600 dark:text-red-400'"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+          {{ importResult()?.success ? 'Import Successful' : 'Import Failed' }}
+        </h3>
+      </div>
+      
+      <p class="text-gray-600 dark:text-gray-400">{{ importResult()?.message }}</p>
+      
+      <div *ngIf="importResult()?.data" class="grid grid-cols-3 gap-4">
+        <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 text-center">
+          <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ importResult()?.data?.total_rows || 0 }}</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Total Rows</p>
+        </div>
+        <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 text-center">
+          <p class="text-2xl font-bold text-green-600 dark:text-green-400">{{ importResult()?.data?.processed_count || 0 }}</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Processed</p>
+        </div>
+        <div class="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 text-center">
+          <p class="text-2xl font-bold text-red-600 dark:text-red-400">{{ importResult()?.data?.error_count || 0 }}</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Errors</p>
         </div>
       </div>
 
-      <!-- Instructions -->
-      <div class="instructions">
-        <h5>File Format Requirements:</h5>
-        <ul>
-          <li><strong>Required Columns:</strong> employee_id, date, in_time, out_time</li>
-          <li><strong>Date Format:</strong> YYYY-MM-DD (e.g., 2024-01-15)</li>
-          <li><strong>Time Format:</strong> HH:MM:SS (e.g., 09:00:00)</li>
-          <li><strong>Employee ID:</strong> Must match existing BambooHR employee IDs</li>
-          <li><strong>File Size:</strong> Maximum 10MB</li>
+      <!-- New Employees Created -->
+      <div *ngIf="hasNewEmployees" class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+        <h4 class="font-medium text-green-800 dark:text-green-200 mb-2">
+          <i class="fas fa-user-plus mr-2"></i>
+          New Employees Created ({{ newEmployees.length }})
+        </h4>
+        <div class="space-y-2">
+          <div *ngFor="let employee of newEmployees" class="flex items-center justify-between bg-white dark:bg-green-800/30 rounded-lg p-3">
+            <div class="flex items-center space-x-3">
+              <div class="w-8 h-8 bg-green-100 dark:bg-green-800 rounded-full flex items-center justify-center">
+                <i class="fas fa-user text-green-600 dark:text-green-400 text-sm"></i>
+              </div>
+              <div>
+                <p class="font-medium text-green-900 dark:text-green-100">{{ employee.employee_name }}</p>
+                <p class="text-sm text-green-600 dark:text-green-300">ID: {{ employee.ina_emp_id }}</p>
+              </div>
+            </div>
+            <div class="text-green-600 dark:text-green-400">
+              <i class="fas fa-check-circle"></i>
+            </div>
+          </div>
+        </div>
+        <p class="text-sm text-green-700 dark:text-green-300 mt-3">
+          <i class="fas fa-info-circle mr-1"></i>
+          These employees have been automatically added to the system and can now be used for future imports.
+        </p>
+      </div>
+
+      <!-- Error Details -->
+      <div *ngIf="hasErrors" class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+        <h4 class="font-medium text-red-800 dark:text-red-200 mb-2">Error Details:</h4>
+        <ul class="space-y-1">
+          <li *ngFor="let error of errorList" class="text-sm text-red-700 dark:text-red-300">
+            • {{ error }}
+          </li>
         </ul>
+      </div>
+    </div>
+  </app-card>
+
+  <!-- Instructions -->
+  <app-card>
+    <div class="space-y-6">
+      <h3 class="text-lg font-semibold text-gray-900 dark:text-white">File Format Requirements</h3>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <h4 class="font-medium text-gray-900 dark:text-white mb-3">Required Columns:</h4>
+          <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+            <li class="flex items-center space-x-2">
+              <i class="fas fa-check text-green-500"></i>
+              <span><strong>Attendance Date</strong> - YYYY-MM-DD format</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <i class="fas fa-check text-green-500"></i>
+              <span><strong>Employee Code</strong> - INA employee ID</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <i class="fas fa-check text-green-500"></i>
+              <span><strong>Employee Name</strong> - Full name</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <i class="fas fa-check text-green-500"></i>
+              <span><strong>In Time</strong> - HH:MM:SS format</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <i class="fas fa-check text-green-500"></i>
+              <span><strong>Out Time</strong> - HH:MM:SS format</span>
+            </li>
+          </ul>
+        </div>
         
-        <div class="sample-data">
-          <h6>Sample Data:</h6>
-          <div class="table-responsive">
-            <table class="table table-sm table-bordered">
+        <div>
+          <h4 class="font-medium text-gray-900 dark:text-white mb-3">Sample Data:</h4>
+          <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 overflow-x-auto">
+            <table class="min-w-full text-xs">
               <thead>
-                <tr>
-                  <th>employee_id</th>
-                  <th>date</th>
-                  <th>in_time</th>
-                  <th>out_time</th>
+                <tr class="border-b border-gray-200 dark:border-gray-700">
+                  <th class="text-left py-2 px-2 font-medium text-gray-700 dark:text-gray-300">Date</th>
+                  <th class="text-left py-2 px-2 font-medium text-gray-700 dark:text-gray-300">Code</th>
+                  <th class="text-left py-2 px-2 font-medium text-gray-700 dark:text-gray-300">Name</th>
+                  <th class="text-left py-2 px-2 font-medium text-gray-700 dark:text-gray-300">In</th>
+                  <th class="text-left py-2 px-2 font-medium text-gray-700 dark:text-gray-300">Out</th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>12345</td>
-                  <td>2024-01-15</td>
-                  <td>09:00:00</td>
-                  <td>17:30:00</td>
+                <tr class="border-b border-gray-200 dark:border-gray-700">
+                  <td class="py-2 px-2 text-gray-600 dark:text-gray-400">2024-01-15</td>
+                  <td class="py-2 px-2 text-gray-600 dark:text-gray-400">EMP001</td>
+                  <td class="py-2 px-2 text-gray-600 dark:text-gray-400">John Doe</td>
+                  <td class="py-2 px-2 text-gray-600 dark:text-gray-400">09:00:00</td>
+                  <td class="py-2 px-2 text-gray-600 dark:text-gray-400">17:30:00</td>
                 </tr>
                 <tr>
-                  <td>12346</td>
-                  <td>2024-01-15</td>
-                  <td>08:30:00</td>
-                  <td>18:00:00</td>
+                  <td class="py-2 px-2 text-gray-600 dark:text-gray-400">2024-01-15</td>
+                  <td class="py-2 px-2 text-gray-600 dark:text-gray-400">EMP002</td>
+                  <td class="py-2 px-2 text-gray-600 dark:text-gray-400">Jane Smith</td>
+                  <td class="py-2 px-2 text-gray-600 dark:text-gray-400">08:30:00</td>
+                  <td class="py-2 px-2 text-gray-600 dark:text-gray-400">18:00:00</td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
       </div>
+      
+      <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+        <div class="flex items-start space-x-3">
+          <i class="fas fa-info-circle text-blue-600 dark:text-blue-400 mt-1"></i>
+          <div>
+            <h4 class="font-medium text-blue-800 dark:text-blue-200">Important Notes:</h4>
+            <ul class="mt-2 space-y-1 text-sm text-blue-700 dark:text-blue-300">
+              <li>• File size must be less than 10MB</li>
+              <li>• Employee codes must match existing Inatech employee IDs</li>
+              <li>• Date format must be YYYY-MM-DD</li>
+              <li>• Time format must be HH:MM:SS (24-hour format)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
+  </app-card>
 </div>
+

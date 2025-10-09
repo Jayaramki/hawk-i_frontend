@@ -1,4 +1,4 @@
-import { Component, signal, ElementRef, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, signal, ElementRef, ViewChild, AfterViewInit, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -8,7 +8,7 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
 import { SearchDropdownComponent, SearchDropdownOption } from '../../../shared/components/search-dropdown/search-dropdown.component';
 
 import { AttendanceService, AttendanceRecord, AttendanceFilters } from '../../../shared/services/attendance.service';
-import { BambooHRService } from '../../../shared/services/bamboohr.service';
+import { InatechEmployeeService } from '../../../shared/services/inatech-employee.service';
 
 // Interfaces for month view
 interface MonthDay {
@@ -291,7 +291,7 @@ interface EmployeeMonthData {
     }
   `]
 })
-export class AttendanceMonthViewComponent implements AfterViewInit, OnDestroy {
+export class AttendanceMonthViewComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('headerScrollContainer') headerScrollContainer!: ElementRef<HTMLDivElement>;
   @ViewChild('bodyScrollContainer') bodyScrollContainer!: ElementRef<HTMLDivElement>;
 
@@ -307,21 +307,26 @@ export class AttendanceMonthViewComponent implements AfterViewInit, OnDestroy {
 
   constructor(
     private readonly attendanceService: AttendanceService,
-    private readonly bambooHRService: BambooHRService
+    private readonly inatechEmployeeService: InatechEmployeeService
   ) {
     this.loadEmployees();
     this.selectedMonth.set(new Date());
   }
 
+  ngOnInit(): void {
+    // Load attendance data on page load with current filter values
+    this.loadAttendance();
+  }
+
   loadEmployees(): void {
-    this.bambooHRService.getEmployees().subscribe({
+    this.inatechEmployeeService.getEmployees().subscribe({
       next: (response) => {
         if (response.success) {
           // Handle different response structures
           const employeesData = response.data.data || response.data;
           if (Array.isArray(employeesData)) {
             const employeeOptions = employeesData.map((emp: any) => ({
-              label: emp.full_name || `${emp.first_name} ${emp.last_name}`,
+              label: emp.employee_name,
               value: emp.id
             }));
             this.employees.set(employeeOptions);
@@ -570,7 +575,17 @@ export class AttendanceMonthViewComponent implements AfterViewInit, OnDestroy {
 
   formatWorkingHours(hours: number | null): string {
     if (!hours) return '-';
-    return `${hours.toFixed(1)}h`;
+    
+    // Convert decimal hours to hours and minutes
+    const totalMinutes = Math.round(hours * 60);
+    const hrs = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
+    
+    if (hrs === 0 && mins === 0) return '0 mins';
+    if (hrs === 0) return `${mins} mins`;
+    if (mins === 0) return `${hrs} hrs`;
+    
+    return `${hrs} hrs ${mins} mins`;
   }
 
   getStatusClasses(statusColor: string): string {
